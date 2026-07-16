@@ -1,11 +1,13 @@
 # Foods Connected — Compliance Assistant
 
-> **Status: living document. Phase 0, 0.5, 1, and 2 (spec, UI mockup, MCP server, backend agent
-> loop) are complete and verified — a closed-build-loop pass (`ai/build-loop-fix-log.md`) tested
-> the spec against a fresh builder with no prior context, 19/19 backend tests pass including 3
-> real-MCP-protocol integration tests, and 5 real spec gaps found in that pass are fixed. Phase 3
-> (frontend) is next.** Sections below are written against `CLAUDE.md` and `specs/agent-spec.md`,
-> completed/corrected as each build phase lands — see `ai/ROADMAP.md` for the phase-by-phase plan.
+> **Status: living document. Phase 0, 0.5, 1, 2, and 4 (spec, UI mockup, MCP server, backend agent
+> loop, tests) are complete and verified. Phase 4 was pulled forward: 33/33 tests pass — MCP-server
+> edge cases, the full agent loop against fake and real MCP servers, a true HTTP-level end-to-end
+> run, and 3 tests against the real Anthropic API + real MCP server, both genuinely live. Haiku's
+> tool-selection and grounded-answering quality is now empirically confirmed sufficient — no move
+> to Sonnet needed. Full breakdown: `ai/test-log.md`. Phase 3 (frontend) is next.** Sections below
+> are written against `CLAUDE.md` and `specs/agent-spec.md`, completed/corrected as each build
+> phase lands — see `ai/ROADMAP.md` for the phase-by-phase plan.
 > Repo: https://github.com/GiuJitsu/foods-connected-compliance-assistant
 
 A take-home technical assessment (AI Engineering role, Foods Connected): a web app where a user
@@ -159,6 +161,17 @@ needed: `cd backend && pip install -r requirements.txt && python -m pytest`).
 
 **Frontend:** `[TODO — Phase 3.]`
 
+**Running the tests:**
+```
+cd mcp-server && pip install -r requirements.txt && python -m pytest
+cd backend && pip install -r requirements.txt && python -m pytest
+```
+Both run entirely against fake models/fake tool sets by default — no network calls, no spend. One
+file, `backend/tests/test_real_llm_integration.py`, is the exception: it calls the real Anthropic
+API and the real MCP server, and is automatically skipped unless `ANTHROPIC_API_KEY` is set (so a
+routine run never spends money by surprise). Full results from the last complete run (33/33
+passing, including that real-API run): `ai/test-log.md`.
+
 ## Key decisions
 
 Full reasoning and chronological log: `ai/DECISIONS.md`. Highlights:
@@ -195,8 +208,9 @@ Full reasoning and chronological log: `ai/DECISIONS.md`. Highlights:
 ## AI-assisted development
 
 This project was built with Claude Code (Sonnet 5) directing the build, using an Anthropic API key
-(starting with Claude Haiku, `claude-haiku-4-5-20251001`, extended thinking enabled — see `CLAUDE.md` §"Tech stack" and
-`specs/agent-spec.md` §10 "On Chain-of-Thought"; may move to Sonnet if Phase 2 testing shows Haiku isn't strong/fast enough)
-for the product agent itself. Full session artefacts — CLAUDE.md, every significant prompt
-(numbered), the decision log, and a tools/models note — are in `ai/`, as required by the assessment
-brief. Full detail: `ai/tools-and-models.md`.
+(Claude Haiku, `claude-haiku-4-5-20251001`, extended thinking enabled — see `CLAUDE.md` §"Tech
+stack" and `specs/agent-spec.md` §10 "On Chain-of-Thought") for the product agent itself. Confirmed
+empirically against the real API (`ai/test-log.md`) that Haiku's tool-selection and
+grounded-answering quality is sufficient — no move to Sonnet needed. Full session artefacts —
+CLAUDE.md, every significant prompt (numbered), the decision log, and a tools/models note — are in
+`ai/`, as required by the assessment brief. Full detail: `ai/tools-and-models.md`.

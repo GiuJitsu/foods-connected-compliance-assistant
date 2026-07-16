@@ -441,13 +441,12 @@ constraints — not itself mandated by the brief:
 - **Backend framework:** FastAPI — async support fits an agent loop well, minimal boilerplate for
   a small API surface.
 - **MCP server:** Python `mcp` SDK.
-- **Model:** Anthropic API (user-provided key). Starting with **Claude Haiku
-  (`claude-haiku-4-5-20251001`, locked P29)** for cost/speed, per the brief's explicit welcome of
-  small/inexpensive models; will move to Sonnet if Haiku's
-  tool-selection reasoning proves too weak during testing, or if extended thinking's added latency
-  (`specs/agent-spec.md` §10) makes Haiku's responses uncomfortably slow — decision point recorded
-  in `ai/DECISIONS.md` when resolved. **Extended thinking is enabled** on the model calls (agreed
-  P11) — see `specs/agent-spec.md` §10 for the trade-off and what gets calibrated in Phase 2.
+- **Model:** Anthropic API (user-provided key). **Claude Haiku (`claude-haiku-4-5-20251001`, locked
+  P29)** for cost/speed, per the brief's explicit welcome of small/inexpensive models — **confirmed
+  final, not provisional** (P34/P35, `ai/DECISIONS.md` §32): run for real against the live API in
+  `backend/tests/test_real_llm_integration.py`, correct tool-selection and honest empty-result
+  handling on the first run, no move to Sonnet needed. **Extended thinking is enabled** on the model
+  calls (agreed P11) — see `specs/agent-spec.md` §10 for the trade-off.
 - **Frontend:** React + TypeScript + Vite.
 - **Tests:** pytest, with a fake model + fake MCP tool set for the agent loop, per the brief's own
   suggestion.
@@ -485,17 +484,27 @@ Moved fully to `specs/agent-spec.md` §11 as part of the P22/P23 consolidation �
 ## Testing requirements
 
 Coverage target (agreed with user, P7): **1 happy path + 2–3 failure scenarios + 5–6 validation
-edge cases**, per §"Testing scenarios & required mock data" above.
+edge cases**, per §"Testing scenarios & required mock data" above. **DONE (Phase 4, P34/P35) — 33/33
+tests passing, full breakdown in `ai/test-log.md`:**
 
 - Agent loop tested against a **fake model** and **fake MCP tool set** (no network/spend needed):
-  loop-bound enforcement, every failure scenario, and result handling/formatting.
+  loop-bound enforcement, every failure scenario, and result handling/formatting —
+  `backend/tests/test_agent_loop_*.py`, `test_loop_bounds.py`, `test_dedup.py`, `test_grounding.py`.
 - MCP server tools unit-tested directly against `mockdata/`, covering every edge case (E1–E6)
-  listed above.
-- If time allows (Phase 4/5 of `ai/ROADMAP.md`): a Playwright end-to-end test covering the happy
-  path and one failure case — better use of residual time than a scripted interview demo. Playwright
-  is a **dev-only tool** (Claude Code uses it to test the frontend); it is never part of the product
-  agent's own tool catalog, and it is not used to script the interview presentation — the demo is
-  presented live/manually. Agreed with user, P7. Full rationale: `ai/DECISIONS.md` §9.
+  listed above — `mcp-server/tests/test_edge_cases.py`.
+- The real MCP server over the real stdio protocol (fake model) —
+  `backend/tests/test_real_mcp_integration.py` — and a true HTTP-level end-to-end run (real
+  submission → real background loop → real MCP subprocess, polled to completion) —
+  `backend/tests/test_end_to_end_http.py`.
+- The real Anthropic API + the real MCP server, both genuinely live, tool selection made by the
+  actual model — `backend/tests/test_real_llm_integration.py`, gated by
+  `pytest.mark.skipif` on `ANTHROPIC_API_KEY` so a routine/CI run never spends money by surprise.
+- A Playwright end-to-end test covering the happy path and one failure case remains optional,
+  scoped to Phase 3 once the frontend exists (§"Verification approach" below) — better use of
+  residual time than a scripted interview demo. Playwright is a **dev-only tool** (Claude Code uses
+  it to test the frontend); it is never part of the product agent's own tool catalog, and it is not
+  used to script the interview presentation — the demo is presented live/manually. Agreed with
+  user, P7. Full rationale: `ai/DECISIONS.md` §9.
 
 ## Integrity Check — run periodically (introduced P14)
 
@@ -533,3 +542,8 @@ MCP contracts, template from `AI FDE Training/Reference/integration-spec-templat
 moved to its own `mockdata/` folder; Playwright dev-tool-only agreed and locked; testing scenarios
 expanded into happy path / 2–3 failures / 5–6 validation edge cases with explicit required mock
 data per case.
+Follow-up (P34/P35): Phase 4 (tests) pulled forward and closed — 33/33 tests passing including
+real-Anthropic-API + real-MCP-server tests, run with the user's key set as a persistent OS env var
+(never pasted into chat or committed); model tier locked from provisional to confirmed-final —
+Haiku's tool-selection and grounded-answering quality is empirically sufficient, no move to Sonnet.
+Full results: `ai/test-log.md`.

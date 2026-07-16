@@ -237,3 +237,8 @@ no need to trim. with options A is the env variable permanent?
 ## P35
 
 ok go ahead and run all tests, you should  also create a test log so we have the results written somewhere. Run all tests we have together with the new one. Approcah this in the most complete way
+
+## P36
+
+before we move on please update all relevant files. Decisions file etc
+Where are the results of the test being written?

@@ -13,8 +13,8 @@ Status tags: `LOCKED` (decided, don't revisit without new information), `OPEN` (
 
 ## RESUME POINT (updated at every meaningful step, per P17 — read this first)
 
-**Rewritten clean at P30, updated at P31, updated at P35** — this block had drifted stale (stacked
-"next" notes from several rounds back, contradicting itself). Superseded content below is gone, not
+**Rewritten clean at P30, updated at P31, P35, P36** — this block had drifted stale (stacked "next"
+notes from several rounds back, contradicting itself). Superseded content below is gone, not
 archived — history for each of these is in its numbered §, not here.
 
 **Where we are:** Phases 0, 0.5, 1, 2, and **4 (Tests)** are **DONE and verified** — Phase 4 was
@@ -894,6 +894,34 @@ enough") — **Haiku is sufficient, no move to Sonnet.**
 
 `ai/ROADMAP.md` Phase 4 marked DONE. `ai/ASSESSMENT-CRITERIA.md` T1/T4 moved TODO→DONE, M1's
 evidence pointer extended to the real-LLM test result.
+
+## 33. P36 — post-Phase-4 sync pass across every artefact — LOCKED
+
+User asked to update all relevant files before moving to Phase 3, and where test results are
+written. Answered directly: `ai/test-log.md` (added §32) is the single source of truth for test
+run results — a human-readable, committed markdown summary, not raw pytest console output (which
+isn't persisted anywhere) and not a CI artifact (no CI configured in this project).
+
+Audited every file named in `CLAUDE.md`'s "Files to keep in sync" table against §32's changes and
+found real staleness beyond what §32 already fixed:
+- `CLAUDE.md` §"Tech stack" and §"Testing requirements" still described Haiku as provisional
+  ("may move to Sonnet if...") and testing as forward-looking — both now resolved facts, not open
+  items. Fixed, plus a "Last updated" log entry appended (never edited by insertion — this file's
+  own append-only-at-tail convention for that section).
+- `README.md` status banner and "AI-assisted development" section had the same provisional-Haiku
+  language; added a "Running the tests" block to §"How to run" so a reader knows both suites exist
+  and that the real-API test is opt-in/gated, not silently skipped without explanation.
+- `ai/tools-and-models.md` had the same provisional hedge — fixed with the same real-run evidence.
+- `ai/session-summary.md` was the one genuinely stale file: **last touched at Phase 0.5**, with a
+  dangling "Updated again after Phase 1" placeholder that was never followed up despite Phases 1, 2,
+  and 4 all completing since. Added all three phases' narrative (Phase 3 still pending, so the
+  placeholder now correctly points there instead).
+
+Deliberately left alone as correct history, not staleness: `ai/DECISIONS.md` §30, `ai/ROADMAP.md`'s
+Phase 2 row, and `ai/build-loop-fix-log.md` all still say "19/19 tests" — that was the true count at
+that point in the project and these are dated log entries, not live status claims (same
+historical-vs-live distinction noted in this file's earlier entries, e.g. the P24 `replace_all`
+near-miss). Confirmed via `grep` across all `.md` files before deciding what to touch, not assumed.
 
 ## 20. Open questions
 
