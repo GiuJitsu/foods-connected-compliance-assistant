@@ -20,7 +20,9 @@ grounding/anti-hallucination rule (§15) and a literal draft system prompt (§16
 (§27). `README.md` substantially expanded with example questions, dataset summary, and MCP-server
 documentation. `CLAUDE.md` has a new "Files to keep in sync" checklist. `ai/ROADMAP.md` Phase 3 has
 a visual-quality sub-step. Next: commit + push this batch, then Phase 2 (backend agent loop) — the
-literal system prompt in `specs/agent-spec.md` §16 is ready to wire in directly.
+literal system prompt now lives at `prompts/system_prompt.txt`, ready to wire in directly. The real
+MCP stdio protocol is now genuinely verified end-to-end (§24 update, §28), not just the tool logic —
+a real client can connect to `mcp-server/server.py` and use it, confirmed, not assumed.
 
 **What exists:** `CLAUDE.md` (full spec), `specs/mcp-integration-spec.md`, `specs/agent-spec.md`,
 `README.md`, `design/ui-mockup/` (wireframe + notes), `ai/ROADMAP.md`, `ai/ASSESSMENT-CRITERIA.md`,
@@ -595,9 +597,16 @@ the direct interpreter path.
   per-call timeout budget (`CLAUDE.md` §"Loop bounds") — the fixture will correctly trip a real
   timeout once Phase 2's backend enforces that bound.
 
-**Not yet tested:** the actual MCP stdio transport end-to-end (spawning `server.py` as a subprocess
-and speaking the MCP protocol to it, rather than calling the Python functions directly) — deferred
-to Phase 2, when the backend genuinely needs to do exactly that to connect.
+**Update (P25) — the stdio transport gap above is now closed.** User correctly pushed back on
+language in a later summary ("the MCP server is already running") that implied more than had
+actually been checked at the time — the distinction between "the Python functions work" and "a
+real MCP client can connect to this over the protocol and call them" is real, and I'd let it blur.
+Verified properly: a scratch script (`mcp.client.stdio.stdio_client` + `mcp.ClientSession`) spawned
+`server.py` as a subprocess exactly as a backend would, ran the real MCP handshake (`initialize`),
+called `list_tools` (all 5 tools returned correctly), and called `call_tool` twice over the actual
+JSON-RPC protocol — once a happy-path `search_suppliers` call, once with a blank `reasoning`,
+correctly rejected with `VALIDATION_ERROR` **at the protocol layer**, not just in a direct function
+call. This is now genuinely verified, not just argued to be probably fine.
 
 ## 25. Git repository + GitHub — IN PROGRESS
 
@@ -702,6 +711,25 @@ emphasis (functional transparency and agent design over visual polish) while sti
 and consistency of the codebase" seriously if time allows.
 
 All committed and pushed together as one logical unit (§25 pattern continues).
+
+## 28. P25/P26 — MCP protocol actually verified; system prompt relocated — LOCKED
+
+**MCP protocol overstatement, corrected and then actually fixed.** User caught real overstated
+language ("the MCP server is already running") — the gap between "functions work directly" and "a
+real MCP client can connect over the protocol" had been correctly flagged once (§24) but then blurred
+in later summaries. Rather than just re-flagging it, closed it for real: a scratch script
+(`mcp.client.stdio.stdio_client` + `mcp.ClientSession`) spawned `server.py` as a subprocess exactly
+as a backend would, ran the actual MCP handshake, `list_tools` (5 tools confirmed), and `call_tool`
+twice over real JSON-RPC — a happy path and a blank-`reasoning` rejection, both correct at the
+protocol layer. `README.md`, `ai/ASSESSMENT-CRITERIA.md` C1, and `ai/DECISIONS.md` §24 updated with
+precise language distinguishing "tool logic verified" from "protocol verified" going forward.
+
+**System prompt relocated to its own folder** (P25/P26, user's explicit request + confirmed
+mechanism): new `prompts/system_prompt.txt` — raw text, no markdown, directly loadable by Phase 2
+(`open(...).read()`). `specs/agent-spec.md` §16 is now a pointer + rationale, not a second copy of
+the text — same lesson as the CLAUDE.md/agent-spec.md consolidation (§26): one source of truth,
+not two files to keep in sync by hand. `CLAUDE.md` repository layout and "files to keep in sync"
+table updated; `README.md` architecture diagram updated.
 
 ## 20. Open questions
 

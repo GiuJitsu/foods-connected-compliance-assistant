@@ -11,7 +11,7 @@ Status legend: `TODO` / `DOING` / `DONE` / `CUT` (deliberately descoped — must
 
 | # | Requirement | Status | Evidence |
 |---|-------------|--------|----------|
-| C1 | Tools consumed **over MCP** — no tool wired directly into the backend outside the protocol | DOING | `mcp-server/server.py` (FastMCP, stdio transport, 5 tools) written and verified (tool logic tested directly); stdio transport itself not yet exercised end-to-end — that's Phase 2 connecting to it, `ai/DECISIONS.md` §24 |
+| C1 | Tools consumed **over MCP** — no tool wired directly into the backend outside the protocol | DOING | `mcp-server/server.py` (FastMCP, stdio transport, 5 tools) — tool logic verified directly AND the real MCP stdio protocol verified separately (handshake, list_tools, call_tool over actual JSON-RPC), `ai/DECISIONS.md` §24/P25. Remaining: Phase 2's backend needs to be the one actually doing this connection in the real app, not a scratch script. |
 | C2 | Tool selection is the **model's decision** inside a bounded agent loop — no hardcoded call sequence | TODO | |
 
 ## Backend

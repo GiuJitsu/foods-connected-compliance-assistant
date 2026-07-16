@@ -176,3 +176,15 @@ also keep tracking and updating every single file. Save state before compression
 when do we start building the MCP servers and the tools associated? this also need to be documented in the readme file
 
 Add to the roadmap to make UI more visually appealing and match it with the best UX standard
+
+## P25
+
+are you saying the MCP server is already running and can be plugged into the agent already? how is it possible if we havent' built yet?
+
+system prompt should be organised in a clear wayin their own folder
+
+## P26
+
+[Response to clarifying question "How should the new prompts/ folder be structured?"]
+
+- "prompts/system_prompt.txt (recommended)"

@@ -111,6 +111,10 @@ shows the outcome and exactly what the agent did to get there. Full brief:
 - `design/` — UI design artefacts, written before frontend code. Currently: `ui-mockup/wireframe.svg`
   + `ui-mockup/NOTES.md` (functional summary — named `NOTES.md`, not `README.md`, to avoid the
   naming collision flagged in `ai/DECISIONS.md` §18).
+- `prompts/` — the literal, directly-loadable prompt text used at runtime, kept separate from
+  `specs/` (which explains *why*) and `backend/` (which *loads* it) — added P25/P26. Currently:
+  `system_prompt.txt` (the product agent's system prompt, raw text, no markdown — Phase 2 loads it
+  verbatim; full rationale in `specs/agent-spec.md` §16).
 - `mockdata/` — the mock dataset (suppliers, certifications, specifications, quality incidents) as
   its own top-level folder, separate from both the MCP server code and the backend. `[Phase 1]`
 - `mcp-server/` — the custom MCP server exposing the food-supply-chain tools, reads from
@@ -131,6 +135,7 @@ Checklist of what needs touching as work proceeds, and when — so nothing gets 
 | `CLAUDE.md` (this file) | Any new locked rule or working agreement; repository layout when a new top-level folder appears |
 | `specs/mcp-integration-spec.md` | Any MCP tool contract changes — before the code, not after |
 | `specs/agent-spec.md` | Any agent-behaviour change — before the system prompt is updated, not after |
+| `prompts/system_prompt.txt` | Whenever agent behaviour changes require a prompt update — keep in lockstep with `specs/agent-spec.md`, don't let them drift into two different sources of truth |
 | `README.md` | Any user-facing fact changes: what's runnable, example questions, dataset shape, known limitations |
 | `ai/tools-and-models.md` | Model tier changes (e.g. Haiku → Sonnet) |
 | `ai/session-summary.md` | End of each phase, narrative update |

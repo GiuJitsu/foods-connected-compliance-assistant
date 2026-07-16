@@ -108,9 +108,11 @@ rationale: `specs/agent-spec.md` §6).
 | `check_allergen_conflicts` | Check whether a specification's allergens overlap with a given avoid-list |
 
 Full contracts (input/output schemas, error behaviour, retry policy): `specs/mcp-integration-spec.md`.
-Built and verified directly (Phase 1, `ai/DECISIONS.md` §24) — happy path, every edge case (E1–E6),
-the blank-`reasoning` rejection, and the deliberate 12-second timeout fixture (`SUP-TIMEOUT-01`) all
-tested against the running server, not just reviewed.
+Built and verified at two levels (Phase 1, `ai/DECISIONS.md` §24): the tool logic directly (happy
+path, every edge case E1–E6, the blank-`reasoning` rejection, the deliberate 12-second timeout
+fixture), **and separately, the real MCP stdio protocol itself** (`ai/DECISIONS.md` §24 update,
+P25) — a real client handshake, `list_tools`, and `call_tool` over actual JSON-RPC, confirming a
+real agent can connect to this server and use it, not just that the underlying Python works.
 
 ## Architecture at a glance
 
@@ -119,7 +121,8 @@ mockdata/     — the mock dataset (JSON): suppliers, certifications, specificat
 mcp-server/   — custom MCP server exposing 5 read-only tools over mockdata/
 backend/      — Python (FastAPI) API + bounded agent loop (Anthropic API + MCP client)
 frontend/     — React + TypeScript UI: task submission, status, tool-activity trace
-specs/        — pre-build design specs (MCP tool contracts)
+specs/        — pre-build design specs (MCP tool contracts, full agent behaviour spec)
+prompts/      — literal, directly-loadable prompt text (system_prompt.txt) used at runtime
 design/       — UI wireframe + functional summary, designed before frontend code exists
 ai/           — required submission artefacts: CLAUDE.md context, prompts, decisions, roadmap
 ```
