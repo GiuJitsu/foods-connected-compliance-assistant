@@ -188,3 +188,13 @@ system prompt should be organised in a clear wayin their own folder
 [Response to clarifying question "How should the new prompts/ folder be structured?"]
 
 - "prompts/system_prompt.txt (recommended)"
+
+## P27
+
+so sthe system prompt will instruct and direct the LLM part while the built pythn will instruct the deterministic part?
+
+## P28
+
+[Response to clarifying question "Add a Python-side mechanical check for grounding (comparing the final answer against trace contents), or leave it prompt-only for now and validate empirically in Phase 4?"]
+
+- "Add a Phase 2 mechanical backstop now"

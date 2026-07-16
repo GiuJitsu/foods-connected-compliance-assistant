@@ -40,6 +40,7 @@ Status legend: `TODO` / `DOING` / `DONE` / `CUT` (deliberately descoped — must
 | F6 | Explicit limit-hit indicator (iteration cap or timeout) shown as its own labelled state, never silently blended into a normal-looking answer | TODO | `limit_hit` field, `specs/mcp-integration-spec.md` §10 |
 | F7 | Per-call `reasoning` note shown (why the agent called that tool) + static "how this agent works" info panel + final-answer basis line (call counts/model/time) + raw-trace-JSON view | TODO | `CLAUDE.md` §"Frontend transparency requirements" #3/#5/#7/#8; `design/ui-mockup/` |
 | F8 | Raw extended-thinking shown per tool-call step, collapsed by default, with a clear non-authoritative caption | TODO | `specs/agent-spec.md` §10 "On Chain-of-Thought"; `thinking` field, `specs/mcp-integration-spec.md` §10 |
+| F9 | (Added P27) Grounding-check warning shown when the final answer references an entity never returned by any tool — distinct from, and shown regardless of, task completion status | TODO | `CLAUDE.md` §"Frontend transparency requirements" #9; AC15; `specs/agent-spec.md` §17 |
 
 ## Model access
 
@@ -79,7 +80,7 @@ Status legend: `TODO` / `DOING` / `DONE` / `CUT` (deliberately descoped — must
 | # | Dimension | Self-check question | Status | Evidence |
 |---|-----------|---------------------|--------|----------|
 | A1 | Agent design | Would a reviewer find the system prompt, tool exposure, loop bounds, and failure handling well-reasoned, not just present? | TODO | `specs/agent-spec.md` (tool-selection rules, delegation boundaries, validation, assumptions) |
-| A2 | Untrusted content handling | Does the design explicitly treat MCP tool results as untrusted input (not blindly followed as instructions)? See `CLAUDE.md` hard constraint on this. | TODO | |
+| A2 | Untrusted content handling | Does the design explicitly treat MCP tool results as untrusted input (not blindly followed as instructions)? See `CLAUDE.md` hard constraint on this. | TODO | `specs/agent-spec.md` §7 (untrusted content) + §15/§17 (grounding rule + mechanical anti-hallucination backstop) |
 | A3 | Codebase quality | Would I be comfortable with this being read as production code carrying my name? | TODO | |
 | A4 | Frontend transparency | Does the UI faithfully show what the agent actually did, or does it paper over/simplify in a way that could mislead? | TODO | |
 | A5 | AI-tool direction & verification | Is there enough evidence (commits, `ai/` artefacts, prompts) to show *how* the build was directed and checked, not just that AI was used? | DOING | |

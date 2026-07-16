@@ -23,6 +23,8 @@ a visual-quality sub-step. Next: commit + push this batch, then Phase 2 (backend
 literal system prompt now lives at `prompts/system_prompt.txt`, ready to wire in directly. The real
 MCP stdio protocol is now genuinely verified end-to-end (§24 update, §28), not just the tool logic —
 a real client can connect to `mcp-server/server.py` and use it, confirmed, not assumed.
+`specs/agent-spec.md` §17 now has the full LLM-vs-Python responsibility map plus a designed (not
+yet built) grounding mechanical backstop — Phase 2 needs to implement it, not just the loop itself.
 
 **What exists:** `CLAUDE.md` (full spec), `specs/mcp-integration-spec.md`, `specs/agent-spec.md`,
 `README.md`, `design/ui-mockup/` (wireframe + notes), `ai/ROADMAP.md`, `ai/ASSESSMENT-CRITERIA.md`,
@@ -730,6 +732,37 @@ mechanism): new `prompts/system_prompt.txt` — raw text, no markdown, directly 
 the text — same lesson as the CLAUDE.md/agent-spec.md consolidation (§26): one source of truth,
 not two files to keep in sync by hand. `CLAUDE.md` repository layout and "files to keep in sync"
 table updated; `README.md` architecture diagram updated.
+
+## 29. P27/P28 — LLM/Python responsibility map + grounding mechanical backstop — LOCKED
+
+User asked to confirm the architecture split ("system prompt directs the LLM part, Python handles
+the deterministic part") — correct, formalised as a full table in `specs/agent-spec.md` §17 rather
+than left as an informal understanding. Surfacing this map exposed one real, previously-accepted
+gap: grounding (§15) was prompt-only, no code-side enforcement, unlike `reasoning` (which has a
+hard Pydantic gate). Asked the user directly rather than deciding unilaterally whether to close it
+now or defer to Phase 4 validation — **user chose to close it now** (P28).
+
+**Grounding mechanical backstop, designed** (`specs/agent-spec.md` §17): after the loop produces a
+final answer, regex-extract ID-shaped tokens (`SUP-`, `CERT-`, `SPEC-`, `INC-` prefixes matching
+`mockdata/`'s actual ID conventions) and flag any not present in the task's own trace. New
+`grounding_check` field on the task-level trace object (`specs/mcp-integration-spec.md` §10):
+`status: PASSED|FLAGGED` + `unrecognized_references`. Does **not** change task `status` — kept as
+an independent trust signal, not conflated with completion state.
+
+**Explicitly documented limits, not oversold:** catches invented *entities* (the primary failure
+mode named in §15), not hallucinated *facts* about real entities, and not name-only hallucinations
+(names aren't reliably regex-matchable). A full semantic fact-check was considered and explicitly
+scoped out — real token cost (needs another model call), not worth it for a 4h build. Assumption A4
+(§13) updated to reflect partial closure, not full closure — prompt-layer effectiveness on
+hallucination *attempts* (as opposed to catching them after the fact) is still a Phase 4 empirical
+question.
+
+**New AC15** (grounding warning shown in UI) + **F9** in `ai/ASSESSMENT-CRITERIA.md` + Phase 2's
+`ai/ROADMAP.md` row updated to include building this backstop. Caught and fixed my own mistake
+mid-edit: a `replace_all` meant to update the live AC1–AC14→AC15 references also silently rewrote a
+*historical* line in `ai/ROADMAP.md` (Phase 0.5's record, correctly AC14 at the time) — reverted
+that one specifically. Worth naming as a recurring risk: `replace_all` is convenient but blind to
+the historical-vs-live distinction this file's own discipline depends on.
 
 ## 20. Open questions
 

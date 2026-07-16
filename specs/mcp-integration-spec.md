@@ -301,12 +301,19 @@ with this field (`specs/agent-spec.md` §10 "On Chain-of-Thought").
   "final_answer": "string, present unless status == FAILED",
   "failure_reason": "enum [MCP_UNREACHABLE, MODEL_API_FAILURE], present only if status == FAILED",
   "model": "string — which model produced this answer, e.g. 'claude-haiku-4-5' (§'Tech stack' in CLAUDE.md for the actual model id in use)",
-  "total_duration_ms": "integer — whole-task wall-clock time, for the final answer's basis line"
+  "total_duration_ms": "integer — whole-task wall-clock time, for the final answer's basis line",
+  "grounding_check": {
+    "status": "enum [PASSED, FLAGGED]",
+    "unrecognized_references": "array of string, entity IDs found in the final answer text that never appeared in any tool_calls result this task — empty when status == PASSED"
+  }
 }
 ```
 The frontend's "basis line" (CLAUDE.md §"Frontend transparency requirements" #5) — call
 success/fail counts, model, total time — is derived client-side from `tool_calls` + `model` +
-`total_duration_ms`; no separate duplicated field needed for it.
+`total_duration_ms`; no separate duplicated field needed for it. `grounding_check` is computed by
+the backend after the final answer is produced (regex-extract ID-shaped tokens from the answer,
+diff against every ID seen in `tool_calls`) — full mechanism, what it catches, and its explicit
+limits: `specs/agent-spec.md` §17.
 
 **`COMPLETED_PARTIAL` semantics, clarified (Integrity Check #1, finding 8):** this status fires
 whenever the final answer doesn't fully resolve the task, for either of two independent causes,

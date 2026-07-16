@@ -311,7 +311,7 @@ produced once all suppliers checked, not before (R3).
 | A1 | Claude (Haiku, extended thinking enabled) reliably supplies a non-empty `reasoning` parameter once instructed and once the schema requires it | Determines whether AC10 holds in practice, and whether R1–R6 compliance is even measurable via the trace | If compliance is low, `VALIDATION_ERROR` rate rises, consuming iteration budget; may force a move to Sonnet for this reason specifically, not just tool-selection quality | Partially confirmed — schema-level rejection of blank reasoning verified working (§6); model's spontaneous compliance rate still to be checked empirically in Phase 4 |
 | A2 | R1/R3/R4/R6 (judgement-dependent rules) are followed well enough by Haiku without needing few-shot examples in the system prompt | Keeps the system prompt short (token-cost discipline, `atx-agent-mapping.md`'s context-engineering principles) | If Haiku's rule-following is weak, may need to add 1-2 worked examples to the system prompt, or move to Sonnet | Flagged for Validation — check empirically in Phase 4 |
 | A3 | The backend-side dedup safety net (R2/R5) is a nice-to-have, not required for correctness | Keeps Phase 2 scope realistic within the ~4h box | If Haiku violates R2/R5 often in testing, the safety net moves from "if time allows" to "required" | Known — accepted as a Phase 2 stretch item, not a blocker |
-| A4 | (Added P24) An explicit grounding instruction (§15) is sufficient to prevent hallucination on empty/NOT_FOUND results, without needing a mechanical post-hoc fact-check against the trace | Determines whether §15's system-prompt-only approach holds, or whether Phase 2 needs to add an automated "does every claim trace to a tool result" check | If Haiku still hallucinates on empty results despite the instruction, a mechanical check (or a move to Sonnet) becomes necessary — this is the highest-severity assumption in this table, since undetected hallucination directly undermines the brief's trust requirement | Flagged for Validation — check empirically in Phase 4, priority case |
+| A4 | (Added P24, updated P27) The prompt instruction (§15) reduces hallucination *attempts*; the ID-reference mechanical backstop (§17) catches the most common *remaining* case (invented entities) but not hallucinated facts about real entities or name-only hallucinations | Determines residual risk after both layers | If Haiku still produces ungrounded answers the backstop can't catch (real-entity fact hallucination, name-only), that residual risk is accepted for this build's scope — a full semantic fact-check is out of scope (§17) | Partially addressed (mechanical backstop built into the spec, P27) — prompt-layer effectiveness still to be checked empirically in Phase 4 |
 
 ## 14. Checklist (self-check against `production-spec-checklist.md`)
 
@@ -374,3 +374,75 @@ treated as final/untouchable. Written for token economy (short, direct sentences
 folder at the user's request (P25) — kept separate from `specs/` (which explains *why*) and from
 `backend/` (which will *load* it), the same separation-of-concerns pattern as `mockdata/` (the data)
 being separate from `mcp-server/` (the code that reads it).
+
+## 17. Division of Responsibility: LLM vs. Deterministic Code (added P27)
+
+User question: "so the system prompt directs the LLM part while the built Python handles the
+deterministic part — correct?" Yes, directionally — formalised here as a full map, since the
+boundary has one genuine gap worth calling out rather than leaving implicit.
+
+| Concern | LLM (system prompt, `prompts/system_prompt.txt`) | Python (Phase 2, hard-enforced) |
+|---|---|---|
+| Which tool, what order | Fully decides — hard constraint #2 | Never chooses; only executes |
+| Tool arguments (domain values) | Decides the values | Validates against schema |
+| `reasoning` text content | Writes it | — |
+| `reasoning` presence | Instructed to always provide one | **Enforced**: missing/blank → `VALIDATION_ERROR` before the tool runs (§6) |
+| Stopping ("I have enough") | Judgement call (R3, §5) | No early-stop enforcement — only a late-stop cap (below) |
+| Iteration cap / timeouts | Not itself aware of counting | **Enforced**: 8 calls / 10s / 60s, code-counted (§3) |
+| Grounding (no hallucination) | Instructed (§15) | **Enforced from P27 on** — see the mechanical backstop below; previously prompt-only |
+| Status (`COMPLETED`/`PARTIAL`/`FAILED`) | Doesn't set this | **Set by the orchestrating Python** from what actually happened (§9) |
+| Trace recording | Not involved | **Entirely Python** — every call logged regardless of model behaviour |
+| MCP-unreachable check | Never invoked in this case | **Python decides before the model runs at all** (§9 #1) |
+
+### Grounding mechanical backstop (added P27, upgrading §15 from prompt-only)
+
+User's call: don't wait for Phase 4 to find out the prompt-only grounding rule isn't reliable
+enough — add a lightweight, deterministic backstop now, in Phase 2, alongside the prompt
+instruction (belt-and-braces, same pattern as `reasoning` in §6).
+
+**Mechanism:** after the loop produces a final answer, extract every ID-shaped token from the
+answer text via regex (`SUP-[A-Z0-9-]+`, `CERT-\d+`, `SPEC-\d+`, `INC-\d+` — matching the actual
+`mockdata/` ID conventions). Separately, collect the set of every entity ID that appeared in *any*
+tool result during this task's trace (not just the ones directly requested — every `id` and
+foreign-key field in every response). Any ID-shaped token in the answer that is **not** in that set
+is flagged.
+
+**Output:** a `grounding_check` field on the task-level trace object:
+```json
+"grounding_check": {
+  "status": "PASSED" | "FLAGGED",
+  "unrecognized_references": ["SUP-999"]
+}
+```
+Added to the trace schema in `specs/mcp-integration-spec.md` §10.
+
+**What this catches:** the primary failure mode named in §15 — inventing a specific entity
+(supplier, certification, specification, incident) that was never returned by any tool, the
+clearest and most testable form of hallucination for this dataset, since the model's own answers
+naturally cite IDs when discussing specific records.
+
+**What this deliberately does NOT catch — stated honestly, not oversold:** a hallucinated *fact*
+about a *real* entity (e.g. inventing a certification status for a supplier that genuinely exists
+and was genuinely looked up) is invisible to this check, since the ID itself is legitimate. Also
+does not catch hallucinated supplier/product **names** used without an ID, since names aren't
+reliably regex-matchable without false positives. This is a real, named limitation — a full
+semantic fact-check (comparing every claim's content, not just entity references, against the
+trace) is out of scope for a 4-hour build and would need an extra model call to do well, at real
+token cost. Documented here so it's a known, deliberate scope boundary, not a silent gap.
+
+**Does not change task `status`.** A `FLAGGED` grounding check is a trust signal about the answer,
+not a statement about whether the task completed — keeping `status` semantics (§9) unmuddied. It's
+surfaced as its own visible signal regardless of `COMPLETED`/`COMPLETED_PARTIAL`.
+
+**Frontend requirement:** when `grounding_check.status == "FLAGGED"`, the UI must show a distinct
+warning ("⚠ This answer references [X] which wasn't found in any tool result — verify before
+relying on it") — added to `CLAUDE.md` §"Frontend transparency requirements" and as AC15.
+
+**Validation:** new failure mode — construct a test where the fake model's answer references an
+unreturned ID; assert `grounding_check.status == "FLAGGED"` and the specific ID is listed. Added to
+§12's failure-mode list conceptually (implementation detail lands in Phase 4's actual test suite).
+
+**Assumption A4 (§13) updated:** no longer "flagged for Phase 4 validation only" — partially
+addressed by this mechanical backstop; the *system-prompt-only* half of A4 (does the instruction
+reduce hallucination *attempts* in the first place, vs. just catching them after the fact) is still
+worth checking empirically in Phase 4, but there's now a real safety net either way.

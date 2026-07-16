@@ -334,6 +334,11 @@ bar needs to be built against directly, not inferred. The frontend **must** rend
 8. **A "view raw trace JSON" affordance** on the final answer — the full underlying trace object
    (§"MCP tool contracts" schema), for anyone who wants the unprocessed data behind the
    human-readable summary. Nothing shown in the UI is a simplification the raw view can't back up.
+9. **A grounding-check warning** (added P27) — when `grounding_check.status == "FLAGGED"`, a
+   distinct, visible warning on the final answer: *"This answer references [X] which wasn't found
+   in any tool result — verify before relying on it."* Shown regardless of task `status` (a
+   `FLAGGED` grounding check is a trust signal about the answer, not about task completion — the
+   two are never conflated). Full mechanism, and its explicit limits: `specs/agent-spec.md` §17.
 
 Full design and trade-off reasoning for chain-of-thought/extended-thinking display: `specs/agent-spec.md` §10.
 
@@ -380,10 +385,11 @@ Five zones, top to bottom — see `design/ui-mockup/wireframe.svg` for the visua
 | AC12 | The app loads, before any task is submitted | a user looks at the page | the static "how this agent works" info panel (model, tools, limits) is already visible |
 | AC13 | A task has completed | a user clicks "view raw trace JSON" | the full underlying trace object is shown, matching what the human-readable summary claims |
 | AC14 | A tool call entry has raw `thinking` content | a user clicks to expand it | the raw extended-thinking text is shown, collapsed by default, with the "unedited, not authoritative" caption always present |
+| AC15 | (Added P27) The final answer's `grounding_check.status == "FLAGGED"` | a user reviews the answer | a distinct warning is visible naming the unrecognized reference(s), shown regardless of the task's completion status |
 
 ### Verification approach — Playwright build loop for Phase 3 specifically
 
-Once Phase 1+2 are solid and Phase 3's UI is built against AC1–AC14 above, run a closed-build-loop
+Once Phase 1+2 are solid and Phase 3's UI is built against AC1–AC15 above, run a closed-build-loop
 pass using Playwright (Claude Code's dev-tool, §"Tech stack") to drive the browser through each
 acceptance criterion and confirm it holds — the same closed-build-loop discipline as the rest of
 this project (build → check against spec → diagnose any gap by the 4-category taxonomy → fix),
@@ -392,7 +398,7 @@ scoped specifically to the UI. This is a good candidate for a small persisted Pl
 
 ### Visual quality (added P24)
 
-AC1–AC14 are functional/transparency acceptance criteria — they say nothing about whether the UI
+AC1–AC15 are functional/transparency acceptance criteria — they say nothing about whether the UI
 *looks* good. Once they pass, a visual-quality pass: use a real component library or a consistent
 small design system (not unstyled HTML), consistent spacing/typography/color scale, basic
 accessibility (colour contrast, visible focus states, readable font sizes), and a responsive layout
