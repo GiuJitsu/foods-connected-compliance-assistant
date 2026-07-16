@@ -1,0 +1,20 @@
+[
+  {"id": "SUP-001", "name": "Dairy Fresh Ltd", "country": "IT", "category": "DAIRY", "risk_rating": "LOW"},
+  {"id": "SUP-002", "name": "Latteria Rossi", "country": "IT", "category": "DAIRY", "risk_rating": "MEDIUM"},
+  {"id": "SUP-003", "name": "Formaggi del Sole", "country": "IT", "category": "DAIRY", "risk_rating": "LOW"},
+  {"id": "SUP-004", "name": "Alpine Milk Co", "country": "FR", "category": "DAIRY", "risk_rating": "HIGH"},
+  {"id": "SUP-005", "name": "Green Valley Produce", "country": "ES", "category": "PRODUCE", "risk_rating": "LOW"},
+  {"id": "SUP-006", "name": "Sunrise Farms", "country": "ES", "category": "PRODUCE", "risk_rating": "MEDIUM"},
+  {"id": "SUP-007", "name": "Nordic Seafood AS", "country": "NO", "category": "SEAFOOD", "risk_rating": "LOW"},
+  {"id": "SUP-008", "name": "Atlantic Catch Ltd", "country": "GB", "category": "SEAFOOD", "risk_rating": "MEDIUM"},
+  {"id": "SUP-009", "name": "Prime Meats GmbH", "country": "DE", "category": "MEAT", "risk_rating": "HIGH"},
+  {"id": "SUP-010", "name": "Highland Beef Co", "country": "GB", "category": "MEAT", "risk_rating": "LOW"},
+  {"id": "SUP-011", "name": "Golden Bakery Supplies", "country": "GB", "category": "BAKERY", "risk_rating": "LOW"},
+  {"id": "SUP-012", "name": "Artisan Bread Co", "country": "FR", "category": "BAKERY", "risk_rating": "MEDIUM"},
+  {"id": "SUP-013", "name": "Value Dairy Group", "country": "PL", "category": "DAIRY", "risk_rating": "HIGH"},
+  {"id": "SUP-TIMEOUT-01", "name": "Slowpoke Logistics Dairy", "country": "IT", "category": "DAIRY", "risk_rating": "MEDIUM"},
+  {"id": "SUP-015", "name": "Riviera Fruits", "country": "ES", "category": "PRODUCE", "risk_rating": "LOW"},
+  {"id": "SUP-016", "name": "Baltic Fish Exports", "country": "LV", "category": "SEAFOOD", "risk_rating": "HIGH"},
+  {"id": "SUP-017", "name": "Meadow Poultry Ltd", "country": "GB", "category": "MEAT", "risk_rating": "MEDIUM"},
+  {"id": "SUP-018", "name": "Sourdough Collective", "country": "FR", "category": "BAKERY", "risk_rating": "LOW"}
+]
