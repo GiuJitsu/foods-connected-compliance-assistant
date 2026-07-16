@@ -221,3 +221,19 @@ save state
 OK place tidy up the roadmap from now to end., Test should be about MCP only ior also the agent itself and any python code that has been built? Should they cover ened to end from submission to result to see if we get what we expect?
 
 Does the readme fikle clarify what is possible to query with this tool and what data can return?
+
+## P32
+
+I would like you to go through all the testing, including against the real LLM which we can config right now and all missing tests you mentioned
+
+## P33
+
+provide instructions to set the key
+
+## P34
+
+no need to trim. with options A is the env variable permanent?
+
+## P35
+
+ok go ahead and run all tests, you should  also create a test log so we have the results written somewhere. Run all tests we have together with the new one. Approcah this in the most complete way

@@ -13,14 +13,15 @@ Status tags: `LOCKED` (decided, don't revisit without new information), `OPEN` (
 
 ## RESUME POINT (updated at every meaningful step, per P17 — read this first)
 
-**Rewritten clean at P30, updated at P31** — this block had drifted stale (stacked "next" notes from
-several rounds back, contradicting itself). Superseded content below is gone, not archived —
-history for each of these is in its numbered §, not here.
+**Rewritten clean at P30, updated at P31, updated at P35** — this block had drifted stale (stacked
+"next" notes from several rounds back, contradicting itself). Superseded content below is gone, not
+archived — history for each of these is in its numbered §, not here.
 
-**Where we are:** Phases 0, 0.5, 1, and 2 are **DONE and verified**. Phase 3 (frontend) is next,
-not yet started. `ai/ROADMAP.md` Phase 4 (Tests) now has three concrete named sub-items (§31):
-`mcp-server/tests/` for E1–E6, one true HTTP-level end-to-end test, and an explicit deliberate cut
-(no automated real-Anthropic-API test). Prompt count: P1–P31 logged in `ai/prompts.md`.
+**Where we are:** Phases 0, 0.5, 1, 2, and **4 (Tests)** are **DONE and verified** — Phase 4 was
+pulled forward out of sequence at the user's request (§32) and fully closed: 33/33 tests passing
+across `mcp-server/tests/` and `backend/tests/`, including 3 tests against the real Anthropic API +
+real MCP server (`ai/test-log.md`). Phase 3 (frontend) is next, not yet started; Phase 5 (closed-loop
+gap-diagnosis pass) and Phase 6 (wrap-up) remain. Prompt count: P1–P35 logged in `ai/prompts.md`.
 
 **What exists and works, concretely:**
 - `CLAUDE.md` — full project spec, Tier-3 standard, includes the Backend API contract (§ added P29).
@@ -52,10 +53,9 @@ acceptance criteria AC1–AC15 in `CLAUDE.md` and the API contract now locked th
 `design/ui-mockup/wireframe.svg` as the visual reference. Announce the file/module layout before
 scaffolding (per the code-files exemption, no per-file confirmation needed).
 
-**Known open items (full list: §20):** model tier (Haiku vs Sonnet) — provisional Haiku
-(`claude-haiku-4-5-20251001`), confirm empirically once real API calls happen; MCP-server-level
-edge-case tests (E1–E6) not yet a formal automated suite (verified manually in Phase 1); visual
-polish for Phase 3, sequenced after functional ACs, first thing to cut if time is tight.
+**Known open items (full list: §20):** visual polish for Phase 3, sequenced after functional ACs,
+first thing to cut if time is tight. (Model tier and MCP-server edge-case-test coverage were both
+open items here — both resolved at §32, see Resume Point above.)
 
 ---
 
@@ -849,10 +849,56 @@ left as an unrelated drift for a later Integrity Check to catch.
 `ai/ROADMAP.md` Phase 4 row rewritten with the three concrete sub-items above (was a generic
 one-liner). Phase 6 row noted README is substantially done already, to revisit for accuracy only.
 
+## 32. P32–P35 — Phase 4 fully built and run, including real-LLM tests — LOCKED
+
+User reversed the P31 "deliberately not adding a real-API test" cut: asked to build and actually
+run everything, including against the real LLM, right now.
+
+**Security practice, locked:** the API key was never pasted into this chat or written to any file.
+User set it themselves as a persistent Windows user env var (`setx ANTHROPIC_API_KEY "..."` in
+their own terminal, outside this session) — the only way for it to reach my PowerShell tool calls
+at all, since shell state doesn't persist across separate tool invocations here and a fresh process
+only sees a variable set via `setx`/the registry, not one set with `$env:` in a different process.
+Verified present by checking the variable's **length only** (`[System.Environment]::
+GetEnvironmentVariable('ANTHROPIC_API_KEY','User')`, length-checked, never printed) — consistent
+with hard constraint #3 ("secrets come from the environment only, nothing sensitive is ever
+committed") applied to the chat/log surface too, not just to git.
+
+**Built (code-file exemption, no per-file confirmation needed — announced layout before writing):**
+- `mcp-server/tests/test_edge_cases.py` (10 tests) + `mcp-server/conftest.py` + `mcp-server/pytest.ini`
+  + `pytest>=8` added to `mcp-server/requirements.txt` — one test per E1–E6 plus two NOT_FOUND
+  contract checks, all against real IDs read directly from `mockdata/*.json` rather than assumed
+  (confirmed SUP-017 has zero certs, CERT-020's `expiry_date` is exactly `2026-07-16` — the
+  project's fixed "today" — SPEC-008/SPEC-019 are the empty/multi-allergen boundary pair, INC-003
+  carries the embedded-instruction text).
+- `backend/tests/test_end_to_end_http.py` — real POST → real background `run_task()` (NOT
+  stubbed, unlike `test_api.py`) → real MCP subprocess → polled via `TestClient`'s persistent
+  background event-loop thread (`with TestClient(...) as client:`, required for the background
+  `asyncio.create_task` to actually run between polls) → asserted against the real returned trace.
+- `backend/tests/test_real_llm_integration.py` — 3 tests, real `AnthropicModelClient` + real
+  `StdioMCPClient`, gated by `pytest.mark.skipif(not os.environ.get("ANTHROPIC_API_KEY"), ...)` so
+  a routine `pytest` run on a keyless machine (or CI) never spends money by surprise — this is a
+  deliberately manual, opt-in run, not part of the default suite's cost profile.
+
+**Result: 33/33 tests passed** (10 mcp-server + 23 backend, 3 of which are the new real-LLM tests;
+0 skipped this run since the key was present). Full breakdown, evidence, and per-test rationale:
+`ai/test-log.md` (new artefact, proposed and created in direct response to the user's explicit
+request in this same message — not a unilateral addition).
+
+**Real finding, not just a pass/fail:** the real model (`claude-haiku-4-5-20251001`) correctly chose
+tools on its own for both a zero-certifications lookup and a legitimately-empty incidents query, and
+reported both honestly — the grounding backstop reported `PASSED` on the empty-result case, meaning
+no fabricated ID appeared in the answer. This resolves the standing open question in this file's old
+§"Open questions" ("Haiku vs Sonnet ... confirm during build if tool-selection reasoning is strong
+enough") — **Haiku is sufficient, no move to Sonnet.**
+
+`ai/ROADMAP.md` Phase 4 marked DONE. `ai/ASSESSMENT-CRITERIA.md` T1/T4 moved TODO→DONE, M1's
+evidence pointer extended to the real-LLM test result.
+
 ## 20. Open questions
 
-- Model tier (Haiku vs Sonnet) for the backend agent — provisional: start with Haiku, confirm during
-  build if tool-selection reasoning is strong enough.
+- ~~Model tier (Haiku vs Sonnet) for the backend agent~~ — **RESOLVED §32**: confirmed empirically
+  against the real API, Haiku is sufficient, no move to Sonnet.
 - Whether to git-init now or after initial scaffolding — will confirm with user before running
   `git init` since it's a state-changing action worth flagging even though low-risk.
 - COMPLETED_PARTIAL semantics (Integrity Check #1, finding 8) — proposed resolution given to user,

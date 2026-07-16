@@ -46,17 +46,17 @@ Status legend: `TODO` / `DOING` / `DONE` / `CUT` (deliberately descoped — must
 
 | # | Requirement | Status | Evidence |
 |---|-------------|--------|----------|
-| M1 | Own API key, mainstream provider (or clearly signposted mock adapter behind the same interface if no key) | DONE | Anthropic API key confirmed by user, `ai/DECISIONS.md` §4 |
+| M1 | Own API key, mainstream provider (or clearly signposted mock adapter behind the same interface if no key) | DONE | Anthropic API key confirmed by user, `ai/DECISIONS.md` §4; actually exercised end-to-end against the real API in `backend/tests/test_real_llm_integration.py`, 3/3 passing — `ai/test-log.md` |
 | M2 | If mock adapter used: MCP service chosen must not itself require paid access | N/A | Not using a mock adapter |
 
 ## Testing
 
 | # | Requirement | Status | Evidence |
 |---|-------------|--------|----------|
-| T1 | Automated tests "where they earn their place" | DOING | 19 backend tests (`backend/tests/`) against `FakeModelClient`/`FakeMCPClient`, no network/spend needed, plus 3 real-MCP-protocol integration tests. Still to add (Phase 4, `ai/ROADMAP.md`): `mcp-server/tests/` for E1–E6, and one true HTTP-level end-to-end test (real `run_task()` over the API, not stubbed). Deliberately not adding: an automated test against the real Anthropic API (cost/flakiness) — real-model verification stays manual, recorded as a deliberate cut. |
-| T2 | Happy path covered end-to-end | DONE | `backend/tests/test_agent_loop_happy_path.py` |
+| T1 | Automated tests "where they earn their place" | DONE | 33/33 tests passing across `mcp-server/tests/` (10) and `backend/tests/` (23) — fake-model/fake-MCP, fake-model/real-MCP, real-HTTP-end-to-end, and real-model/real-MCP layers all covered, no gaps left. Full breakdown: `ai/test-log.md`. |
+| T2 | Happy path covered end-to-end | DONE | `backend/tests/test_agent_loop_happy_path.py`; also exercised for real in `backend/tests/test_real_llm_integration.py` |
 | T3 | 2–3 failure scenarios covered (MCP unreachable, tool error mid-task, model/API failure) | DONE | `backend/tests/test_agent_loop_failures.py` (all 3) |
-| T4 | 5–6 validation edge cases covered (empty results, zero-cert supplier, invalid enum, embedded-instruction content, allergen boundaries, expiry boundary) | TODO | `CLAUDE.md` §"Testing scenarios & required mock data" — these are MCP-server-level (`mcp-server/`) tests, not yet written as a formal suite (verified manually during Phase 1, `ai/DECISIONS.md` §24) |
+| T4 | 5–6 validation edge cases covered (empty results, zero-cert supplier, invalid enum, embedded-instruction content, allergen boundaries, expiry boundary) | DONE | `mcp-server/tests/test_edge_cases.py` (10 tests, one per E1–E6 plus NOT_FOUND contracts), `ai/test-log.md` |
 | T5 | Loop-bound enforcement specifically tested (iteration cap, timeouts) | DONE | `backend/tests/test_loop_bounds.py` |
 | T6 | (Added P29) Grounding mechanical backstop tested | DONE | `backend/tests/test_grounding.py` (4 tests, incl. end-to-end "model invents an ID" case) |
 | T7 | (Added P29) Dedup safety net (R2/R5) tested | DONE | `backend/tests/test_dedup.py` |
