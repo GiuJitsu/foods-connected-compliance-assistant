@@ -246,3 +246,15 @@ Where are the results of the test being written?
 ## P37
 
 ok so readme file explains clearly what testa are available and how to run them? so we have all cases happy fail and edge cases? we tested logic, validation and all other scenarios?
+
+## P38
+
+let'e have a bigger top banner and a side bar, colours that recall food and a style of font that is not office style but more food related
+
+## P39
+
+ok, let's go with this. Start building
+
+## P40
+
+install playwright

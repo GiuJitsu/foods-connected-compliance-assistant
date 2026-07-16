@@ -1,11 +1,10 @@
 # Foods Connected — Compliance Assistant
 
-> **Status: living document. Phase 0, 0.5, 1, 2, and 4 (spec, UI mockup, MCP server, backend agent
-> loop, tests) are complete and verified. Phase 4 was pulled forward: 33/33 tests pass — MCP-server
-> edge cases, the full agent loop against fake and real MCP servers, a true HTTP-level end-to-end
-> run, and 3 tests against the real Anthropic API + real MCP server, both genuinely live. Haiku's
-> tool-selection and grounded-answering quality is now empirically confirmed sufficient — no move
-> to Sonnet needed. Full breakdown: `ai/test-log.md`. Phase 3 (frontend) is next.** Sections below
+> **Status: living document. Phases 0, 0.5, 1, 2, 3, and 4 (spec, UI mockup, MCP server, backend
+> agent loop, frontend, tests) are complete. The frontend is built against the real backend and
+> real Anthropic API and verified with a real Playwright browser run — which caught and fixed one
+> genuine bug (a React StrictMode polling issue no backend-only test could have found; full account
+> `ai/DECISIONS.md` §34). Phases 5 (gap-diagnosis pass) and 6 (wrap-up) remain.** Sections below
 > are written against `CLAUDE.md` and `specs/agent-spec.md`, completed/corrected as each build
 > phase lands — see `ai/ROADMAP.md` for the phase-by-phase plan.
 > Repo: https://github.com/GiuJitsu/foods-connected-compliance-assistant
@@ -159,7 +158,24 @@ key is used throughout (`ai/DECISIONS.md` §4) — without one set, task submiss
 `MODEL_API_FAILURE`/`INTERNAL_ERROR`, not a crash (the tests use `FakeModelClient` instead, no key
 needed: `cd backend && pip install -r requirements.txt && python -m pytest`).
 
-**Frontend:** `[TODO — Phase 3.]`
+**Frontend (Phase 3 — runnable today):**
+```
+cd frontend
+npm install
+npm run dev
+```
+Open `http://localhost:5173` — expects the backend running at `http://localhost:8000` (override
+with a `VITE_API_BASE_URL` env var if it's elsewhere). React + TypeScript + Vite; see
+`frontend/README.md` for the component layout.
+
+**Frontend end-to-end tests (Playwright, dev-only — `ai/DECISIONS.md` §9):**
+```
+cd frontend
+npx playwright install chromium   # first time only
+npx playwright test
+```
+Requires both the backend and frontend dev servers already running (see above), plus a real
+`ANTHROPIC_API_KEY` for the one test that submits a real task.
 
 **Running the tests:**
 ```

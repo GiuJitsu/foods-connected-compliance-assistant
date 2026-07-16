@@ -121,7 +121,8 @@ shows the outcome and exactly what the agent did to get there. Full brief:
   `mockdata/`. `[Phase 1]`
 - `backend/` — Python backend: API, agent loop, MCP client wiring. `[Phase 2 — DONE, closed-build-loop
   verified, ai/build-loop-fix-log.md]`
-- `frontend/` — React + TypeScript app. `[Phase 3]`
+- `frontend/` — React + TypeScript + Vite app. `[Phase 3 — built, wired to the real backend and
+  verified with a real Playwright browser run, ai/DECISIONS.md §34]`
 
 ## Files to keep in sync (added P24, per "keep tracking and updating every single file")
 

@@ -13,15 +13,20 @@ Status tags: `LOCKED` (decided, don't revisit without new information), `OPEN` (
 
 ## RESUME POINT (updated at every meaningful step, per P17 — read this first)
 
-**Rewritten clean at P30, updated at P31, P35, P36** — this block had drifted stale (stacked "next"
-notes from several rounds back, contradicting itself). Superseded content below is gone, not
+**Rewritten clean at P30, updated at P31, P35, P36, P40** — this block had drifted stale (stacked
+"next" notes from several rounds back, contradicting itself). Superseded content below is gone, not
 archived — history for each of these is in its numbered §, not here.
 
-**Where we are:** Phases 0, 0.5, 1, 2, and **4 (Tests)** are **DONE and verified** — Phase 4 was
-pulled forward out of sequence at the user's request (§32) and fully closed: 33/33 tests passing
-across `mcp-server/tests/` and `backend/tests/`, including 3 tests against the real Anthropic API +
-real MCP server (`ai/test-log.md`). Phase 3 (frontend) is next, not yet started; Phase 5 (closed-loop
-gap-diagnosis pass) and Phase 6 (wrap-up) remain. Prompt count: P1–P35 logged in `ai/prompts.md`.
+**Where we are:** Phases 0, 0.5, 1, 2, 3, and 4 are all **DONE**. Phase 3 (`frontend/`, React +
+TypeScript + Vite) was designed as an approved Artifact mockup first, then built against the locked
+API contract, then verified with a real Playwright browser run against the real backend + real
+Anthropic API — which found and fixed one genuine bug (a React StrictMode polling issue, §34) no
+other test in this project could have caught. Only Phase 5 (closed-loop gap-diagnosis pass) and
+Phase 6 (wrap-up) remain. Prompt count: P1–P40 logged in `ai/prompts.md`.
+
+**Tools installed this session that weren't present at the start:** Python 3.12 (P18), git + gh
+(P19), Node.js LTS (P39), `@playwright/test` + Chromium (P40, installed as an npm package since no
+Playwright MCP server was actually connected — `ai/DECISIONS.md` §34).
 
 **What exists and works, concretely:**
 - `CLAUDE.md` — full project spec, Tier-3 standard, includes the Backend API contract (§ added P29).
@@ -922,6 +927,71 @@ Phase 2 row, and `ai/build-loop-fix-log.md` all still say "19/19 tests" — that
 that point in the project and these are dated log entries, not live status claims (same
 historical-vs-live distinction noted in this file's earlier entries, e.g. the P24 `replace_all`
 near-miss). Confirmed via `grep` across all `.md` files before deciding what to touch, not assumed.
+
+## 34. P38–P40 — Phase 3 (frontend) designed, built, and verified with a real browser — LOCKED
+
+Two-stage process, user-directed throughout: design first as a static Artifact, get explicit
+approval, then build.
+
+**Design.** First pass (not itself numbered as a prompt — produced from the locked layout/AC
+requirements): a restrained ledger/audit aesthetic — serif labels, indigo accent, hairline rules.
+User feedback (P38) was a real pivot, not a refinement: bigger banner, a sidebar, food-specific
+colors, a non-office display font. Rebuilt with a genuinely different concept — kraft-paper ground,
+tomato-red accent, food-grown semantic colors kept separate from it (basil/wheat/stone/fig-plum/wine
+per CLAUDE.md's requirement that every error category read as visually distinct, not just red vs
+green), rounded display type instead of the ledger serif, task input embedded in the banner itself
+(functional, not decorative), and the static info panel moved into a persistent chalkboard-style
+sidebar. Approved as-is (P39) before any component code was written — cheap to iterate on as a
+static HTML artifact, expensive to iterate on as React.
+
+**Build.** Node.js wasn't installed (same situation Python was in at session start) — installed via
+winget with explicit confirmation first, same pattern as P18. Scaffolded `frontend/` (Vite + React
+19 + TypeScript), then built the full component tree against the locked API contract
+(`CLAUDE.md` §"Backend API contract") and AC1–AC15: `types.ts` mirrors `backend/schemas.py`
+field-for-field, `api.ts`/`hooks/useTask.ts` handle the submit-then-poll-to-terminal-status flow,
+and one component per zone (`Banner`, `Sidebar`, `StatusBanner`, `TraceList`, `AnswerCard`,
+`FailureCard`). The approved design's CSS tokens/layout were ported directly into `index.css`.
+`npm run build` (tsc + vite build) passed clean on the first attempt.
+
+**Verification — the real finding here.** No Playwright MCP server was actually connected in this
+session despite `CLAUDE.md`'s plan to use one — `ToolSearch` found nothing. Asked the user how to
+proceed (P40); resolved by installing the `@playwright/test` **package** directly into
+`frontend/` instead, which lets me drive a real Chromium browser via a script/test file without
+needing an MCP tool wrapper at all — and produces a persisted, reusable test suite
+(`frontend/tests/e2e.spec.ts`, `frontend/playwright.config.ts`) as a side effect, which
+`CLAUDE.md` §"Testing requirements" already called out as a nice-to-have.
+
+Ran the real stack — real backend, real MCP server, real Anthropic API (the key already configured
+at §32/§33) — through a real browser. **First run: 3 of 4 tests passed; the real-task test hung and
+timed out at 45s with the UI stuck showing "In progress" forever**, even though the backend log
+showed the task had actually completed. Root cause, found by reading `useTask.ts` against the
+backend log: a classic React 18/19 `StrictMode` double-effect pitfall. The polling hook's cleanup
+effect set `mounted.current = false` on unmount but never reset it to `true` on setup — harmless in
+production, but `StrictMode` deliberately double-invokes effects in development
+(mount → cleanup → mount) specifically to catch bugs like this one, and the cleanup's `false` stuck
+permanently after that first simulated unmount. Every subsequent poll's `if (!mounted.current)
+return` then fired immediately, silently dropping the result *before* scheduling the next poll —
+so after exactly one HTTP request, polling stopped forever, invisibly. Fixed by moving
+`mounted.current = true` into the effect's setup phase, not just relying on the initial `useRef(true)`.
+Re-ran: 4/4 pass, real task completes in ~9s.
+
+**Why this matters beyond "a bug got fixed":** this class of bug is invisible to every other test in
+this project. `backend/tests/` has no React and no browser at all — it could never have caught it.
+Only a real browser, actually polling a real backend, surfaced it. This is the concrete answer to
+"what did the AI get wrong and how was it caught" (assessment brief presentation point P4) — not a
+hypothetical, an actual bug found via the exact tool (Playwright) the spec always intended to use
+for this, just wired up a different way than planned once the MCP-server route turned out to be
+unavailable in this session.
+
+**What's verified live vs. code-reviewed only:** the happy/partial-completion path, the info panel,
+reasoning/thinking disclosure, basis line, raw-JSON view, and grounding-PASSED are all confirmed via
+real screenshots of a real run. The 3 FAILED sub-states, the limit-hit path, and grounding-FLAGGED
+are implemented and match the same logic already covered by `backend/tests/test_agent_loop_failures.py`
+/ `test_loop_bounds.py` / `test_grounding.py`, but weren't separately forced through the live UI —
+recorded honestly as `DOING`, not `DONE`, in `ai/ASSESSMENT-CRITERIA.md` F2/F5/F6/F9.
+
+`ai/ROADMAP.md` Phase 3 marked DONE. `ai/ASSESSMENT-CRITERIA.md` F1, F3, F4, F7, F8 moved to DONE;
+F2, F5, F6, F9, A4 moved to DOING with the live-vs-code-reviewed distinction stated explicitly.
 
 ## 20. Open questions
 

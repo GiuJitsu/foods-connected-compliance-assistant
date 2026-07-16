@@ -32,15 +32,15 @@ Status legend: `TODO` / `DOING` / `DONE` / `CUT` (deliberately descoped — must
 
 | # | Requirement | Status | Evidence |
 |---|-------------|--------|----------|
-| F1 | React (TypeScript encouraged) | TODO | |
-| F2 | User can submit a task and see progress + result, with 4 distinct overall states (in progress/completed/completed-partial/failed) | TODO | `CLAUDE.md` §"Frontend transparency requirements" |
-| F3 | Per tool call: shows tool name, input, result summary, **and explicit success/error status** (not folded together) | TODO | `CLAUDE.md` §"Frontend transparency requirements"; trace schema in `specs/mcp-integration-spec.md` §10 |
-| F4 | A user can look at a completed task and understand what the agent did and why the answer is what it is (this is the transparency bar, not just "logs exist") | TODO | |
-| F5 | Sensible, visually distinct states shown for each of the 3 failure modes (MCP unreachable / tool error / model failure) — user can tell *which* failure happened | TODO | `specs/agent-spec.md` §9 "Escalation / Failure Behaviour" |
-| F6 | Explicit limit-hit indicator (iteration cap or timeout) shown as its own labelled state, never silently blended into a normal-looking answer | TODO | `limit_hit` field, `specs/mcp-integration-spec.md` §10 |
-| F7 | Per-call `reasoning` note shown (why the agent called that tool) + static "how this agent works" info panel + final-answer basis line (call counts/model/time) + raw-trace-JSON view | TODO | `CLAUDE.md` §"Frontend transparency requirements" #3/#5/#7/#8; `design/ui-mockup/` |
-| F8 | Raw extended-thinking shown per tool-call step, collapsed by default, with a clear non-authoritative caption | TODO | `specs/agent-spec.md` §10 "On Chain-of-Thought"; `thinking` field, `specs/mcp-integration-spec.md` §10 |
-| F9 | (Added P27) Grounding-check warning shown when the final answer references an entity never returned by any tool — distinct from, and shown regardless of, task completion status | TODO | `CLAUDE.md` §"Frontend transparency requirements" #9; AC15; `specs/agent-spec.md` §17 |
+| F1 | React (TypeScript encouraged) | DONE | `frontend/` — React 19 + TypeScript + Vite |
+| F2 | User can submit a task and see progress + result, with 4 distinct overall states (in progress/completed/completed-partial/failed) | DOING | `frontend/src/components/StatusBanner.tsx` implements all 4; IN_PROGRESS and COMPLETED verified live via Playwright (`frontend/tests/e2e.spec.ts`), COMPLETED_PARTIAL and FAILED implemented/code-reviewed but not yet forced live in the browser |
+| F3 | Per tool call: shows tool name, input, result summary, **and explicit success/error status** (not folded together) | DONE | `frontend/src/components/TraceList.tsx`; verified live — real trace rendered correctly in a real Playwright run, screenshot reviewed |
+| F4 | A user can look at a completed task and understand what the agent did and why the answer is what it is (this is the transparency bar, not just "logs exist") | DONE | Confirmed by direct visual review of a real completed task's screenshot — reasoning, thinking, tool sequence, and answer all legible together |
+| F5 | Sensible, visually distinct states shown for each of the 3 failure modes (MCP unreachable / tool error / model failure) — user can tell *which* failure happened | DOING | `frontend/src/components/FailureCard.tsx` — 3 distinct copy blocks implemented, matching `backend/tests/test_agent_loop_failures.py`'s 3 scenarios; not yet exercised live through the UI |
+| F6 | Explicit limit-hit indicator (iteration cap or timeout) shown as its own labelled state, never silently blended into a normal-looking answer | DOING | Implemented in `StatusBanner.tsx`/`AnswerCard.tsx` (names which limit), matches `backend/tests/test_loop_bounds.py`; not yet forced live through the UI |
+| F7 | Per-call `reasoning` note shown (why the agent called that tool) + static "how this agent works" info panel + final-answer basis line (call counts/model/time) + raw-trace-JSON view | DONE | All four verified live in a real Playwright run against the real backend: `frontend/src/components/{TraceList,Sidebar,AnswerCard}.tsx` |
+| F8 | Raw extended-thinking shown per tool-call step, collapsed by default, with a clear non-authoritative caption | DONE | `TraceList.tsx`; verified live — real extended-thinking content rendered under a collapsed disclosure in the real Playwright screenshot |
+| F9 | (Added P27) Grounding-check warning shown when the final answer references an entity never returned by any tool — distinct from, and shown regardless of, task completion status | DOING | `AnswerCard.tsx` implements both PASSED and FLAGGED renders; PASSED verified live (real grounding check on a real answer), FLAGGED not yet observed live (requires a real hallucination, not reliably reproducible on demand) — code-reviewed against the schema instead |
 
 ## Model access
 
@@ -84,7 +84,7 @@ Status legend: `TODO` / `DOING` / `DONE` / `CUT` (deliberately descoped — must
 | A1 | Agent design | Would a reviewer find the system prompt, tool exposure, loop bounds, and failure handling well-reasoned, not just present? | TODO | `specs/agent-spec.md` (tool-selection rules, delegation boundaries, validation, assumptions) |
 | A2 | Untrusted content handling | Does the design explicitly treat MCP tool results as untrusted input (not blindly followed as instructions)? See `CLAUDE.md` hard constraint on this. | TODO | `specs/agent-spec.md` §7 (untrusted content) + §15/§17 (grounding rule + mechanical anti-hallucination backstop) |
 | A3 | Codebase quality | Would I be comfortable with this being read as production code carrying my name? | TODO | |
-| A4 | Frontend transparency | Does the UI faithfully show what the agent actually did, or does it paper over/simplify in a way that could mislead? | TODO | |
+| A4 | Frontend transparency | Does the UI faithfully show what the agent actually did, or does it paper over/simplify in a way that could mislead? | DOING | `frontend/` built and live-verified against a real running task (real Playwright browser run, `ai/DECISIONS.md` §34) — happy/partial paths shown faithfully; failure-state and limit-hit paths implemented but not yet live-exercised (`ai/ASSESSMENT-CRITERIA.md` F5/F6) |
 | A5 | AI-tool direction & verification | Is there enough evidence (commits, `ai/` artefacts, prompts) to show *how* the build was directed and checked, not just that AI was used? | DOING | |
 | A6 | Judgement over feature tour | Can I articulate, in the presentation, where I intervened and what the AI got wrong? | TODO | |
 
