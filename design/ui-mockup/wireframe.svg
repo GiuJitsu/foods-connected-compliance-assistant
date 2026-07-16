@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="1060" viewBox="0 0 960 1060" font-family="Segoe UI, Arial, sans-serif">
+  <rect width="960" height="1060" fill="#fafafa"/>
+
+  <text x="30" y="34" font-size="20" font-weight="700" fill="#111">Compliance Assistant — hypothetical UI (wireframe)</text>
+  <text x="30" y="54" font-size="12" fill="#777">Not final visual design — layout and information architecture only.</text>
+
+  <!-- Static "how this agent works" info panel -->
+  <rect x="30" y="70" width="900" height="46" rx="6" fill="#eef1f4" stroke="#d0d5db"/>
+  <text x="46" y="90" font-size="12" fill="#333">ℹ How this agent works — model: claude-haiku · tools: search_suppliers, get_supplier_profile, search_specifications,</text>
+  <text x="46" y="106" font-size="12" fill="#333">search_quality_incidents, check_allergen_conflicts · limits: 8 tool calls / 60s total · results are read-only, mock data only</text>
+
+  <!-- Task input -->
+  <text x="30" y="142" font-size="13" font-weight="600" fill="#333">1. Submit a task</text>
+  <rect x="30" y="152" width="740" height="42" rx="6" fill="#fff" stroke="#b7bdc6"/>
+  <text x="44" y="178" font-size="13" fill="#8a8f98">e.g. Which dairy suppliers have an expired certification?</text>
+  <rect x="782" y="152" width="148" height="42" rx="6" fill="#1565c0"/>
+  <text x="856" y="178" font-size="13" fill="#fff" text-anchor="middle" font-weight="600">Submit</text>
+
+  <!-- Status banner + legend -->
+  <text x="30" y="222" font-size="13" font-weight="600" fill="#333">2. Status (four distinct states)</text>
+  <rect x="30" y="232" width="230" height="34" rx="17" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="145" y="254" font-size="12" fill="#2e7d32" text-anchor="middle" font-weight="700">✓ Completed</text>
+
+  <rect x="290" y="238" width="12" height="12" rx="6" fill="#1565c0"/>
+  <text x="308" y="248" font-size="11" fill="#555">In progress</text>
+  <rect x="410" y="238" width="12" height="12" rx="6" fill="#ef6c00"/>
+  <text x="428" y="248" font-size="11" fill="#555">Completed — limit hit</text>
+  <rect x="590" y="238" width="12" height="12" rx="6" fill="#c62828"/>
+  <text x="608" y="248" font-size="11" fill="#555">Failed (3 distinct reasons — see below)</text>
+
+  <!-- Agent activity trace -->
+  <text x="30" y="298" font-size="12" font-weight="600" fill="#333">3. Agent activity — full ordered tool-call trace (each card also has a collapsed "▸ raw reasoning" disclosure, AC14 — omitted below for space)</text>
+
+  <!-- Card A: success -->
+  <rect x="30" y="308" width="900" height="86" rx="6" fill="#fff" stroke="#d0d5db"/>
+  <rect x="30" y="308" width="6" height="86" fill="#2e7d32"/>
+  <text x="48" y="328" font-size="12" font-weight="700" fill="#111">🔧 search_suppliers</text>
+  <text x="230" y="328" font-size="11" fill="#2e7d32" font-weight="700">✓ success · 120ms</text>
+  <text x="48" y="346" font-size="11" fill="#555">input: {"category": "DAIRY", "country": "IT"}</text>
+  <text x="48" y="362" font-size="11" fill="#555">reasoning: "Finding suppliers matching the requested filters before checking each one's compliance."</text>
+  <text x="48" y="380" font-size="11" fill="#333">result: 3 suppliers found (Dairy Fresh Ltd, Latteria Rossi, Formaggi del Sole)</text>
+
+  <!-- Card B: success -->
+  <rect x="30" y="404" width="900" height="86" rx="6" fill="#fff" stroke="#d0d5db"/>
+  <rect x="30" y="404" width="6" height="86" fill="#2e7d32"/>
+  <text x="48" y="424" font-size="12" font-weight="700" fill="#111">🔧 get_supplier_profile</text>
+  <text x="240" y="424" font-size="11" fill="#2e7d32" font-weight="700">✓ success · 95ms</text>
+  <text x="48" y="442" font-size="11" fill="#555">input: {"supplier_id": "SUP-014"}</text>
+  <text x="48" y="458" font-size="11" fill="#555">reasoning: "Checking certification status for Dairy Fresh Ltd."</text>
+  <text x="48" y="476" font-size="11" fill="#333">result: BRCGS certification — status EXPIRED (expired 2026-03-01)</text>
+
+  <!-- Card C: error -->
+  <rect x="30" y="500" width="900" height="94" rx="6" fill="#fff" stroke="#d0d5db"/>
+  <rect x="30" y="500" width="6" height="94" fill="#c62828"/>
+  <text x="48" y="520" font-size="12" font-weight="700" fill="#111">🔧 search_quality_incidents</text>
+  <text x="270" y="520" font-size="11" fill="#c62828" font-weight="700">✗ error · TIMEOUT · 10000ms</text>
+  <text x="48" y="538" font-size="11" fill="#555">input: {"supplier_id": "SUP-014"}</text>
+  <text x="48" y="554" font-size="11" fill="#555">reasoning: "Checking for open recalls before concluding on Dairy Fresh Ltd."</text>
+  <text x="48" y="570" font-size="11" fill="#c62828">error: TIMEOUT — "Tool call did not respond within 10s (simulated fixture SUP-TIMEOUT-01)"</text>
+  <text x="48" y="586" font-size="10" fill="#8a8f98">this call's error category is shown distinctly from a NOT_FOUND or VALIDATION_ERROR (see spec)</text>
+
+  <!-- Final answer -->
+  <text x="30" y="628" font-size="13" font-weight="600" fill="#333">4. Final answer — visually separated from the trace above</text>
+  <rect x="30" y="638" width="900" height="150" rx="6" fill="#fff8e1" stroke="#ef6c00"/>
+  <text x="48" y="660" font-size="11" fill="#ef6c00" font-weight="700">⚠ Partial answer — 1 of 3 tool calls failed (not a limit-hit; a mid-task tool error)</text>
+  <text x="48" y="682" font-size="12" fill="#222">Dairy Fresh Ltd (Italy) has an EXPIRED BRCGS certification (expired 2026-03-01).</text>
+  <text x="48" y="700" font-size="12" fill="#222">Could not retrieve recall/incident history — the quality-incident lookup timed out.</text>
+  <text x="48" y="718" font-size="12" fill="#222">The other 2 suppliers queried (Latteria Rossi, Formaggi del Sole) had valid certifications.</text>
+  <text x="48" y="746" font-size="11" fill="#555">basis: 3 tool calls · 2 succeeded, 1 failed · model: claude-haiku · task time: 1.4s</text>
+  <text x="48" y="764" font-size="11" fill="#1565c0" text-decoration="underline">[ View raw trace JSON ▾ ]</text>
+
+  <!-- Failure states -->
+  <text x="30" y="818" font-size="13" font-weight="600" fill="#333">5. Failure states (red) and the non-failure limit-hit state (amber) — distinct per cause, shown instead of the final answer</text>
+
+  <rect x="30" y="828" width="290" height="60" rx="6" fill="#ffebee" stroke="#c62828"/>
+  <text x="46" y="850" font-size="11" font-weight="700" fill="#c62828">✗ Failed — tools unavailable</text>
+  <text x="46" y="868" font-size="10" fill="#8a3131">MCP server unreachable at task start</text>
+
+  <rect x="335" y="828" width="290" height="60" rx="6" fill="#ffebee" stroke="#c62828"/>
+  <text x="351" y="850" font-size="11" font-weight="700" fill="#c62828">✗ Failed — model error</text>
+  <text x="351" y="868" font-size="10" fill="#8a3131">Anthropic API failure mid-task; no stack trace shown</text>
+
+  <rect x="640" y="828" width="290" height="60" rx="6" fill="#fff3e0" stroke="#ef6c00"/>
+  <text x="656" y="850" font-size="11" font-weight="700" fill="#ef6c00">Completed — limit hit</text>
+  <text x="656" y="868" font-size="10" fill="#8a5a00">Iteration cap (8) or 60s timeout reached</text>
+
+  <text x="30" y="922" font-size="11" fill="#8a8f98">Legend: tool-call trace mirrors specs/mcp-integration-spec.md §10 (task-level status/limit_hit + per-call reasoning/error.type).</text>
+  <text x="30" y="940" font-size="11" fill="#8a8f98">Full functional description: design/ui-mockup/NOTES.md · acceptance criteria: CLAUDE.md §"UI interaction design &amp; acceptance criteria"</text>
+</svg>

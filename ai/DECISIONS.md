@@ -1,0 +1,601 @@
+# Decisions Log — Food Connected AI Engineering Assessment
+
+Chronological record of scope, design, constraints, rules, goals, and intended results. Each entry
+is a locked decision (or an explicitly open question). This file is the source of truth if a
+session is interrupted or context is compressed — read this file top-to-bottom to resume with full
+context. Conclusions live here; day-to-day narrative reasoning can be reconstructed from
+`prompts.md` if more detail is ever needed.
+
+Status tags: `LOCKED` (decided, don't revisit without new information), `OPEN` (needs a decision),
+`PROVISIONAL` (working assumption, flagged for confirmation).
+
+---
+
+## RESUME POINT (updated at every meaningful step, per P17 — read this first)
+
+**Where we are:** Phase 0, 0.5, 1 done. Python 3.12.10 installed via winget; `mcp-server/schemas.py`,
+`mockdata/*.json`, `mcp-server/server.py` all written **and verified working** (every tool function
+tested directly, including the E1–E3 edge cases, blank-reasoning enforcement, and the 12s timeout
+fixture — §24). Next: Phase 2, the backend agent loop.
+
+**What exists:** `CLAUDE.md` (full spec), `specs/mcp-integration-spec.md`, `specs/agent-spec.md`,
+`README.md`, `design/ui-mockup/` (wireframe + notes), `ai/ROADMAP.md`, `ai/ASSESSMENT-CRITERIA.md`,
+`ai/tools-and-models.md`, `ai/session-summary.md`, `ai/prompts.md` (P1–P17), plus Phase 1's
+`mcp-server/` and `mockdata/` code.
+
+**Standing rules currently active (all in `CLAUDE.md`, don't re-derive, just follow):** print
+roadmap status every step; confirm before creating new artefact/doc files (code files in Phases
+1–3 exempt, announce layout instead); log every prompt verbatim in `ai/prompts.md` without being
+asked; keep this Resume Point current without being asked; run an Integrity Check periodically
+(procedure defined in `CLAUDE.md`, one has run — see §21).
+
+**Immediate next action:** Phase 2 — backend agent loop (FastAPI + Anthropic API + MCP client,
+bounded loop, trace recording).
+
+**Known open items:** model tier (Haiku vs Sonnet) — provisional Haiku, confirm empirically in
+Phase 2/4; git-init timing — confirm with user first; MCP stdio transport still untested
+end-to-end (only direct function calls so far — real test is Phase 2 connecting to it); §20 for
+the full open-questions list.
+
+---
+
+## 0. Source documents
+
+- `2026 AI Engineering Assessment.pdf` (project root) — the assessment brief. Full text captured
+  in this session; key points summarised in §1 below.
+- `AI FDE Training/` — a separate training-program repo the user completed before this exercise.
+  **We do not write inside this folder.** It's read-only reference material.
+- `AI FDE Training/Reference/` — contains the ATX methodology docs (`atx/atx-concepts.md`,
+  `atx-scoring.md`, `atx-assessment.md`, `atx-agent-mapping.md`, `atx-economics.md`) plus
+  `claude-md-examples-guide.md`, `production-spec-checklist.md`,
+  `spec-ambiguity-vs-builder-mistakes.md`, `integration-spec-template.md`,
+  `discovery-questioning-patterns.md`, `Thinking-Discipline-Primer.md`, and capstone materials.
+
+## 1. Assessment requirements summary — LOCKED
+
+**Goal:** Web app where a user submits a natural-language task; a Python backend runs a **bounded
+agent loop** (LLM + tools) to complete it; tools are sourced from **at least one MCP server**;
+a React frontend shows the outcome and the agent's tool activity transparently.
+
+**Hard constraints (both must hold, non-negotiable):**
+1. Tools must be consumed **over MCP** — not wired directly into the backend.
+2. **Tool selection is the model's decision**, made inside the bounded loop — no hardcoded call
+   sequence with the model just summarising at the end.
+
+**Backend must:** expose an API for the frontend; run the agent loop (connect to MCP server,
+present tools, execute model-chosen calls, feed results back, support multiple calls per task);
+bound the loop (iteration cap + timeouts, at minimum); fail well (unreachable MCP server, mid-task
+tool error, model failure → meaningful state, never a hang or stack trace); take secrets from
+environment only.
+
+**Frontend must:** let user submit a task and see progress/result; show, per tool call, the tool
+name, input, and a summary of the result, such that a user can understand what the agent did and
+why the answer is what it is; show sensible failure states.
+
+**Model access:** own API key, mainstream provider, cheap/small model acceptable; mock adapter
+allowed only if no API access, and only if paired with an MCP service that itself needs no paid
+access.
+
+**Testing:** automated tests "where they earn their place" — agent loop against a fake model/fake
+tools (loop bounds, error paths, result handling) is called out as the natural target.
+
+**Deliverables:**
+1. Git repo with real history (commits that tell the story, not one final commit).
+2. `ai/` directory in the repo: agent instruction files (CLAUDE.md etc.), significant prompts,
+   transcripts/session summaries, a note on tools/models used. **Required, not optional.**
+3. README: how to run (incl. env vars, mock-adapter toggle if any), use case + MCP choice, key
+   decisions, known limitations, what's next with more time.
+
+**Time box:** ~4 hours for someone fluent in this already. Do not substantially exceed. If scope is
+cut, record what and why in the README — a deliberate cut is a positive signal.
+
+**What gets assessed:** agent design (prompts/tools/loop bounds/failures); how the system treats
+content it can't trust (tool results are untrusted input); codebase quality as production code;
+frontend transparency (does it faithfully show what the agent did); how AI tools were directed and
+verified (artefacts + commit history + presentation); judgement over feature tour.
+
+**Presentation (15 min + Q&A):** use case & MCP choice and why; agent design (system prompt, tool
+presentation, loop bounds, failure handling); how the build itself was AI-directed; what the AI got
+wrong and how it was caught.
+
+## 2. What from ATX methodology is actually useful here — REVISED (see §7)
+
+ATX is built for enterprise consulting engagements (client discovery, business-case scoring,
+economics). Most of it doesn't apply — there's no client, no real workload, no ROI case to build.
+What transfers:
+
+- **Five elements of an enterprise agent** (Purpose, Scope, Context, Tools, Governance) from
+  `atx-agent-mapping.md` — used as the checklist for the agent design section of CLAUDE.md and the
+  system prompt.
+- **Agent Purpose Document shape** (objectives, KPIs/success criteria, failure modes, escalation
+  triggers, autonomy — what the agent decides alone vs. escalates) — maps directly onto what the
+  assessment asks us to present about agent design.
+- **`production-spec-checklist.md`** — buildability bar (no vague "should"/"handle appropriately",
+  every conditional has explicit criteria, every integration has timeout/retry/rate-limit/fallback
+  defined). Used as the acceptance bar for CLAUDE.md and any capability specs we write before
+  building.
+- **`spec-ambiguity-vs-builder-mistakes.md`** — the 4-category failure taxonomy (Spec Ambiguity /
+  Builder Misread / Test Problem / Design Gap). Used live during the build to diagnose anything
+  Claude Code gets wrong, and directly answers the presentation's "what did the AI get wrong, how
+  did you catch it" prompt.
+- **`claude-md-examples-guide.md`** — the Tier-1/2/3 quality example. CLAUDE.md for this project is
+  written to the Tier-3 standard (concrete entities, explicit rules, no generic boilerplate).
+- **Two-file context pattern** from the root `AI FDE Training/CLAUDE.md` (CLAUDE.md = concise
+  locked rules/decisions, session-log.md = full reasoning trail) — adapted here as
+  `CLAUDE.md` (root, rules) + `ai/DECISIONS.md` (this file, decisions + enough narrative to resume
+  a session).
+
+**Not used:** volume×value scoring, TCO/ROI modelling, discovery interview patterns, delegation
+archetype scoring for a business process — no client, no real process to score.
+
+**Correction, see §7:** this section originally undersold the closed-build-loop discipline itself
+(as opposed to the business-scoring machinery) — §7 has the fuller, corrected picture.
+
+## 3. Working agreements with the user — LOCKED
+
+- Don't assume — ask before locking in non-obvious decisions.
+- Step by step: after any file is created/edited, state what changed. Substantive design decisions
+  wait for confirmation; routine artefact bookkeeping (`ai/DECISIONS.md`, `ai/prompts.md`,
+  `ai/ROADMAP.md`) is kept current proactively, without needing a reminder each time (P5).
+- Never write inside `AI FDE Training/` — that's read-only reference material from a separate
+  training program.
+- Project root is `c:\Food Connected demo` (referred to as "Food Connected Demo").
+- Every significant prompt from the user gets logged verbatim, numbered, in `ai/prompts.md`.
+- This file (`DECISIONS.md`) is updated immediately whenever a decision locks, so progress survives
+  context compression — treat it as the resume point.
+- `CLAUDE.md` lives at the **project root** (not inside `ai/`) so Claude Code auto-loads it as the
+  project constitution during the actual build. The `ai/` directory holds the submission artefacts
+  (`prompts.md`, `DECISIONS.md`, and later a session-summary note) — CLAUDE.md is referenced from
+  there rather than duplicated, since the assessment's `ai/` requirement is satisfied by pointing to
+  the root file plus keeping copies of its historical versions if it changes materially.
+- **At every step, print the current `ai/ROADMAP.md` phase table and our position in it, on
+  screen** (P7) — not just kept in files.
+
+## 4. Model access — LOCKED
+
+User has an **Anthropic API key**, usable independently of the Claude Code subscription. Backend
+agent will call the Anthropic API directly (model tier TBD — likely Haiku or Sonnet for cost, to be
+decided when we design the agent loop and estimate call volume per task).
+
+## 5. Use case & MCP server — LOCKED
+
+**Decision:** custom, self-built MCP server over a mock food-supply-chain dataset (suppliers,
+product certifications, recalls, allergens) — not the GitHub MCP server.
+
+**Why:** thematically relevant to Foods Connected's actual business (differentiates the submission
+from the assessment's own worked example); fully offline/deterministic for the live demo (no
+external API flakiness during presentation); full control over the dataset means we can
+deliberately engineer genuine multi-tool reasoning (a single question forces 2–3 chained tool
+calls) and deliberately engineer the untrusted-content / failure-mode scenarios the brief grades
+explicitly, rather than hoping GitHub's live data produces good demo moments. Traded off against
+GitHub MCP's lower build effort — accepted the extra build time as worthwhile given what it buys
+on the criteria the brief actually scores (agent design story, transparency, failure handling).
+
+**Not chosen — GitHub MCP server:** official, zero build effort, real live data, but generic
+(matches the brief's own example almost verbatim), needs a second secret (GitHub PAT), and its
+large tool catalog would need curation anyway.
+
+Concrete tool list and dataset shape were refined against real research — see §9.
+
+## 6. Files created so far
+
+- `ai/prompts.md` — prompt log (P1–P14 logged).
+- `ai/DECISIONS.md` — this file.
+- `CLAUDE.md` (root) — full Tier-3 rewrite, plus P7/P9/P10 follow-ups.
+- `ai/ROADMAP.md` — build sequence adapted from the ATX closed-build-loop pattern (§7), Phase 0.5 added.
+- `ai/ASSESSMENT-CRITERIA.md` — self-assessment checklist traced to the brief's grading criteria.
+- `specs/mcp-integration-spec.md` — full MCP tool contracts (§12).
+- `specs/agent-spec.md` — tool-selection rules, delegation boundaries, validation/assumptions (§22).
+- `README.md` — purpose, user handbook, brief-required sections (§14).
+- `design/ui-mockup/wireframe.svg` + `design/ui-mockup/NOTES.md` — UI mockup + functional summary (§17), renamed from README.md to NOTES.md (§18).
+- `ai/tools-and-models.md`, `ai/session-summary.md` — remaining `ai/` deliverable artefacts (§18).
+
+## 7. ATX methodology, revisited — LOCKED
+
+User pushback (P5): ATX is fundamentally about scope definition, task decomposition, and delegation
+rules, and the user's own Week 1–5 artefacts encode a decisional process worth reusing, not just a
+generic framework. Correct — §2 above undersold it. A background research agent surveyed the actual
+weekly folders (`Week1-exercise/`, `Week2-Exercise/`, `Week4/`, `Week5/`) and confirmed a concrete,
+reusable pattern (full detail in `ai/ROADMAP.md`):
+
+- **The closed-build-loop artifact sequence is real and consistent across weeks**: a spec/CLAUDE.md
+  build brief, followed by numbered artifacts (`01-Test-Cases.md` → `02-Agent-Output.md` →
+  `03-Test-Results.md` → `04-Gap-Diagnosis.md` → `05-Fix-Log.md`), diagnosing every gap against the
+  4-category taxonomy (Spec Ambiguity / Builder Misread / Test Problem / Design Gap) from
+  `AI FDE Training/Reference/spec-ambiguity-vs-builder-mistakes.md`.
+- **A verbatim three-part build prompt** is reused across weeks: *"Begin building the agent
+  described in this document. First, tell me what you can build confidently without asking
+  questions. Second, tell me what you need to clarify before building the rest. Third, build the
+  parts you are confident about."* — worth reusing here when a spec is handed off for building.
+- **Week 5's integration-spec sub-files** (`07a`/`07c`) and **Agent Purpose Document**
+  (`04-agent-purpose.md`) are strong applied templates: the integration specs pair a reference
+  implementation with an explicit error/retry table and a "what this does NOT do" section (near
+  1:1 fit for our MCP tool contracts); the Agent Purpose Document's four-bucket autonomy matrix
+  (decides alone / acts-then-notifies / proposes-human-approves / human-takes-over) plus
+  severity-ranked failure modes is the structure adopted for our own agent-design section.
+
+**Decision:** compress this discipline into one spec (this CLAUDE.md) and one running gap log,
+rather than the multi-day multi-file version built for a 4-day capstone. Full compressed roadmap:
+`ai/ROADMAP.md`. §2 above stands corrected — the process discipline (not the business-scoring
+machinery) is the useful part, and it's now the backbone of how we sequence the actual build.
+
+## 8. Foods Connected — real business domain research — LOCKED
+
+Public web research (no client data, no confidential information — all from Foods Connected's own
+public marketing site and public company-profile aggregators):
+
+Foods Connected is a cloud-based supply chain management platform for the food industry, used by
+150+ manufacturing factories and 8,000+ suppliers across North America, Europe, and Asia-Pacific.
+Five solution areas: **Compliance & Food Safety** (supplier audits, compliance workflows, risk
+assessments), **Procurement** (e-negotiations, forecasting, cost modelling), **Quality Management**
+(real-time quality insights, audits, incident logging), **Product Lifecycle Management** (NPD,
+"accurate controls on product specifications in real time"), **Traceability** (end-to-end product
+journey tracking via a centralised ledger).
+
+Sources:
+- [Foods Connected — homepage](https://www.foodsconnected.com/)
+- [Food Compliance Software & Food Supply Chain Management Software](https://www.foodsconnected.com/solutions/food-compliance-software/)
+- [Our Solutions — Foods Connected](https://www.foodsconnected.com/solutions/)
+- [Food Traceability Software — Foods Connected](https://www.foodsconnected.com/solutions/food-traceability-software/)
+
+**Implication for our mock dataset:** refine the entity names and vocabulary to mirror the real
+product areas directly (Compliance & Food Safety + Quality Management + Product Lifecycle
+Management — the three areas a lightweight demo can plausibly cover; Procurement and the full
+cryptographic Traceability ledger are out of scope, too complex for a 4h build). Revised entity
+model, replacing the earlier placeholder from §5:
+
+- **Supplier** — id, name, country, category, risk_rating. (mirrors "supplier risk management")
+- **Certification** — supplier_id, standard (BRCGS / GLOBALG.A.P. / ISO 22000 / SALSA — real food
+  safety certification schemes), status (VALID/EXPIRED/SUSPENDED), expiry_date. (mirrors
+  "supplier audits... risk assessments")
+- **Specification** — id, supplier_id, name, category, allergens[], status (DRAFT/APPROVED/
+  UNDER_REVIEW). Named "Specification," not "Product" — this is Foods Connected's own term
+  ("accurate controls on product specifications").
+- **Quality Incident** — id, specification_id, date, type (RECALL/COMPLAINT/NON_CONFORMANCE),
+  severity, description. (mirrors "log incidents to improve product quality")
+
+Tool list from §5 is renamed to match (`search_specifications` not `search_products`,
+`search_quality_incidents` not `search_recalls`) but otherwise unchanged in shape/count (5 tools).
+Full spec goes in `CLAUDE.md` and `specs/mcp-integration-spec.md`.
+
+## 9. Playwright MCP — LOCKED (both roles)
+
+**Playwright MCP is a tool for Claude Code during development only.** Used to drive a browser and
+exercise the React frontend end-to-end once it exists. Explicitly **not** part of the in-app
+product agent's own tool catalog; that agent only ever gets the custom food-supply-chain MCP
+server. Keeping the two separate avoids muddying the assessment's core requirement (the product's
+agent loop reasoning over food-compliance tools) with an unrelated browser-automation tool that has
+nothing to do with the chosen use case.
+
+**No scripted interview demo.** User agreed (P7) with the recommendation: don't script the
+interview demo with Playwright. The brief explicitly rewards judgement over "a feature tour" and
+asks the candidate to walk through what the agent did and why — a human narrating a live,
+manually-driven demo shows understanding more directly than a script running itself, and a
+scripted demo adds live-presentation risk (if it desyncs or breaks, there's no fallback) for no
+grading benefit the brief asks for. The demo is presented live/manually.
+
+**Best use of Playwright found:** a small Playwright-driven E2E test (happy path + one failure
+case), added to the automated test suite if time allows (Phase 4/5) — legitimately satisfies the
+brief's testing section and is a good talking point for "how you verified your AI tools."
+
+## 10. New tracking artefacts — LOCKED
+
+- `ai/ROADMAP.md` — phase-by-phase build sequence (spec → MCP server → agent loop → frontend → one
+  closed-loop gap-diagnosis pass → wrap-up), time-budgeted against the ~4h box, adapted from the
+  closed-build-loop pattern in §7.
+- `ai/ASSESSMENT-CRITERIA.md` — every grading criterion and deliverable from the brief, tracked as a
+  checklist, to self-assess against before submission.
+
+## 11. Product agent design decisions — LOCKED (confirmed P8)
+
+Set while writing the full CLAUDE.md rewrite, under the latitude given in P5 ("keep writing... without
+needing reminders"), clarified in plain language in chat, and explicitly confirmed by the user in
+P8 ("Keep all four"):
+
+- **Interaction model: single-shot, not multi-turn chat.** The agent runs one task to completion (or
+  explicit partial/failure) per submission; it cannot ask a mid-task clarifying question. Chosen
+  because the brief frames the flow as "user submits a task ... backend completes it," and building
+  real clarification round-trips wasn't judged worth the scope cost in a 4-hour build.
+- **Loop bounds:** iteration cap = 8 tool calls/task; per-tool-call timeout = 10s; total task
+  timeout = 60s. Arbitrary-but-reasonable defaults for a 5-tool catalog where a realistic query
+  chains 2-3 calls; easy to retune once we see real tool-call patterns in testing.
+- **Escalation ranking** (5 failure modes, most-to-least likely) — see CLAUDE.md
+  §"Product agent design" for the full list.
+- **Three deliberate test fixtures** (embedded-instruction supplier record, one reserved
+  supplier_id that simulates a tool timeout, one guaranteed-empty query) — required by CLAUDE.md's
+  domain data model section, to be built into the mock dataset in Phase 1.
+
+## 12. P7 follow-up decisions — LOCKED
+
+- **Roadmap-status visibility:** at every step, print the current `ai/ROADMAP.md` phase table and
+  our position in it, on screen, in chat — not just kept in files. Added to `CLAUDE.md` working
+  agreements.
+- **Detailed MCP spec:** `specs/mcp-integration-spec.md` written using the shape of
+  `AI FDE Training/Reference/integration-spec-template.md` (11-section REST template adapted to 5
+  MCP tool contracts) — full version; the compact table in `CLAUDE.md` stays for quick reference
+  during the build.
+- **Mock data location:** own top-level `mockdata/` folder, separate from both `mcp-server/` (the
+  server code) and `backend/` — not nested inside either.
+- **Testing scope, agreed explicitly:** 1 happy path + 2–3 failure scenarios + 5–6 validation edge
+  cases, with the mock dataset built to make every one of them genuinely reproducible (not just
+  asserted in a test without backing data). Full breakdown in `CLAUDE.md` §"Testing scenarios &
+  required mock data" — only one of the three failure scenarios (mid-task tool error) is
+  data-dependent; the other two (MCP server unreachable, model/API failure) are test-harness-level
+  faults, not something the dataset itself encodes.
+- **Playwright — fully agreed** (§9 updated from OPEN to LOCKED on both the dev-tool role and the
+  no-scripted-demo call).
+
+## 14. P8 follow-up: single-shot semantics, transparency requirements, README — LOCKED
+
+**Single-shot, confirmed:** yes — one task submission runs the loop to completion; there is no
+follow-up turn that continues the same reasoning context. The user can submit a *new*, independent
+task afterward, but it starts fresh with no memory of the prior task. Documented as a named
+limitation (not a hidden gap) in `README.md`'s "known limitations" / "what's next" sections.
+
+**8-call cap scope, confirmed:** yes — it's per single-shot task. Within one submission, the agent
+autonomously decides which of the 5 MCP tools to call, with what arguments, and in what order, up
+to 8 calls total, before it must stop and answer.
+
+**Transparency requirements, strengthened.** User asked whether "what data is being used, what MCP
+tools are called, what calls error, whether any limit was hit" is already covered in
+`ai/ASSESSMENT-CRITERIA.md`. It was covered generally (F3/F4/A4) but not spelled out explicitly
+enough to build against directly. Fixed by:
+- Adding a dedicated "Frontend transparency requirements" section to `CLAUDE.md` enumerating
+  exactly what the UI must render (task text, overall status, full ordered tool-call trace with
+  per-call success/error detail, an explicit iteration-cap/timeout-hit indicator, final vs. partial
+  answer distinction, distinct displays for each of the three failure modes).
+- Adding a task-level `limit_hit` field (`NONE` / `ITERATION_CAP` / `TIMEOUT`) to the trace schema
+  in `specs/mcp-integration-spec.md` §10, alongside the existing per-call fields — so "was a limit
+  hit" is a first-class, explicit signal, not something the frontend has to infer.
+- Adding `ai/ASSESSMENT-CRITERIA.md` row F6 for limit-hit visibility specifically.
+
+**New artefact:** `README.md` (project root) — purpose overview + end-user handbook (how to read
+the transparency UI) + the brief's required README sections (use case/MCP choice, key decisions,
+known limitations, what's next). Created as a living document now, completed as phases land.
+
+## 15. P9 follow-up decisions — LOCKED
+
+- **UI acceptance criteria (AC1–AC9) + a textual wireframe** added to `CLAUDE.md`
+  §"UI interaction design & acceptance criteria" — designed now (spec-first, cheap on paper),
+  built in Phase 3 only once Phases 1–2 (mock data/MCP server, backend agent loop) are solid, since
+  the frontend depends on the backend's trace/status contract existing first.
+- **Phase 3 gets its own scoped closed-build-loop pass using Playwright**: build the UI against
+  AC1–AC9, drive it with Playwright, diagnose any gap with the 4-category taxonomy, fix. Confirmed
+  this only happens after foundations (Phases 1–2) are solid, per the user's explicit caveat.
+- **Validation/error taxonomy added to the trace schema**: `error.type` ∈
+  `[VALIDATION_ERROR, NOT_FOUND, TIMEOUT, SERVER_ERROR]`, not just a success/fail boolean — user's
+  "UI could also show validation (if successful or not)" point. Updated in
+  `specs/mcp-integration-spec.md` §10 and `CLAUDE.md` §"Frontend transparency requirements."
+- **CLAUDE.md scope clarified in the file itself** (not just in chat) — a short note now sits under
+  the file's opening explaining what belongs in CLAUDE.md (build-relevant requirements: entities,
+  contracts, agent/UI rules) vs. `ai/ASSESSMENT-CRITERIA.md` (external grading checklist),
+  `ai/DECISIONS.md` (reasoning/history), `ai/ROADMAP.md` (phase sequencing). Assessment: current
+  CLAUDE.md is on the right side of this line already — no restructuring needed, just made explicit
+  for future readers (and it's a good presentation talking point: deliberate separation of
+  concerns).
+
+## 16. Multi-turn follow-up — LOCKED (P10: "let's leave as is")
+
+User asked whether follow-up queries (instead of strict single-shot) would be nicer for the user
+and how much complexity it would add. Analysis given in chat:
+
+**What it would require:** session/conversation state (a thread ID, task history stored server-side);
+deciding how much prior context to carry into a follow-up call (full tool-call history vs. just
+prior final answers — risk of unbounded context growth across many turns); a frontend redesign
+from "one task, one card" to a conversation thread view; new test surface (context-carrying
+correctness, follow-up ambiguity resolution); a decision on whether loop bounds (§"Loop bounds")
+apply per-turn only or need a session-level cap too.
+
+**Estimate:** meaningfully more work — realistically another 45–90 minutes on top of an already
+~3.5–4.5h budget, real risk of exceeding the brief's "do not substantially exceed ~4h" instruction.
+
+**Decision, confirmed P10:** keep single-shot for the build. Multi-turn follow-up is now recorded
+as item #1 in `README.md` §"What's next, with more time," with the complexity estimate carried
+over verbatim. Closed — do not revisit without new information (e.g. spare time genuinely
+materialising late in the build).
+
+## 17. P10 follow-up decisions — LOCKED
+
+- **UI mockup created**: `design/ui-mockup/wireframe.svg` (visual wireframe — five zones: static
+  info panel, task input, status banner, tool-call trace, final answer) + `design/ui-mockup/NOTES.md`
+  (functional summary: what the app is, what it looks like, what a user can do, and a full table
+  mapping every transparency question to where it's answered in the UI).
+- **Transparency requirements expanded** (user's explicit list: which tools called, what data
+  retrieved, what processing/synthesis happened, what reasoning the model applied — plus items we
+  suggested): added a per-call `reasoning` field (short, model-stated rationale for that specific
+  tool call — captured from the assistant text preceding the tool_use block, deliberately *not* raw
+  chain-of-thought), a task-level "basis line" (call success/fail counts, model name, total time), a
+  static always-visible "how this agent works" info panel (model/tools/limits), and a "view raw
+  trace JSON" affordance. Added to `CLAUDE.md` §"Frontend transparency requirements" (now 8 items)
+  and §"UI interaction design & acceptance criteria" (AC10–AC13 added, 13 total), the trace schema
+  in `specs/mcp-integration-spec.md` §10 (`reasoning`, `model`, `total_duration_ms` fields), and
+  `ai/ASSESSMENT-CRITERIA.md` (row F7).
+- **Roadmap updated**: new Phase 0.5 ("UI mockup & functional summary") inserted between Phase 0
+  and Phase 1, marked done; Phase 3's acceptance-criteria reference updated to AC1–AC13.
+
+## 18. P11 follow-up decisions — LOCKED
+
+- **Extended thinking: enabled, shown (Option B).** Reversed the earlier decision to exclude raw
+  chain-of-thought. User's pushback was correct: the reason not to show it as *authoritative* is a
+  reason to *caption it carefully*, not to *hide it* — hiding it worked against the brief's own
+  "as explicit and transparent as possible" instruction. Now: extended thinking is enabled on the
+  Anthropic API calls; shown per tool-call step behind a collapsed-by-default disclosure with a
+  fixed caption ("the model's own unedited reasoning for this step — not guaranteed to be a
+  complete or authoritative account of why it acted"); the curated `reasoning` one-liner stays
+  inline and always visible regardless. Trade-off accepted knowingly: extra output tokens + latency
+  per call, in tension with choosing Haiku for cost — to be calibrated for real in Phase 2, not
+  guessed at now. `CLAUDE.md` §"On chain-of-thought", trace schema `thinking` field in
+  `specs/mcp-integration-spec.md` §10, AC14 added, `ai/ASSESSMENT-CRITERIA.md` row F8.
+- **Folder structure confirmed at repo root.** `ai/` stays scoped to session artefacts per the
+  brief's literal deliverable #2 wording (CLAUDE.md pointer, prompts, session summary, tools/models
+  note); `specs/`, `design/`, and `README.md` stay at repo root — `specs/`/`design/` are product
+  design docs, not AI-session artefacts, and README is the brief's own separate deliverable #3
+  (also needs to be root-level for GitHub/GitLab to auto-render it). User confirmed this reading.
+- **Naming collision fixed.** User noticed two files named `README.md` (root, and inside
+  `design/ui-mockup/`) — legitimate confusion about which one is "the" deliverable. Renamed the
+  subfolder one to `design/ui-mockup/NOTES.md`; all cross-references updated (`CLAUDE.md`,
+  `README.md`, `ai/ROADMAP.md`, the SVG's own footer text).
+- **Deliverable-tracking gap closed.** User asked where all deliverables are tracked — answer:
+  `ai/ASSESSMENT-CRITERIA.md` §"Deliverables" (D1–D11), mapped directly to the brief's 3 numbered
+  deliverables. Checking it surfaced two genuinely missing items (not just unstarted — actually
+  not yet created): D4 (transcripts/session summaries) and D5 (tools/models note). Fixed
+  immediately: `ai/session-summary.md` (living, D4) and `ai/tools-and-models.md` (D5) created.
+
+## 19. P12/P13 correction — LOCKED
+
+User caught an overstatement: §18 framed `ai/session-summary.md` as closing a "missing deliverable"
+gap. Re-checked the brief's exact wording — *"the significant prompts you used, transcripts **or**
+session summaries"* — an *or*, not an *and*. `ai/prompts.md` (verbatim, numbered) already satisfies
+this as a transcript; it was never actually missing. `ai/tools-and-models.md` remains genuinely
+required (the brief lists "a brief note on which tools and models" as its own separate item, and
+nothing else in the repo does that job specifically) — that one stands as originally reasoned.
+
+`ai/session-summary.md` also legitimately overlaps in content with this very file (same events,
+prose instead of a decision log). **Resolution, confirmed P13:** keep it, but re-labelled from
+"deliverable" to **presentation-prep material** — a narrative easier to talk from than a stack of
+numbered decisions when covering "how you directed your AI tools" / "where you intervened" in the
+15-minute presentation. `ai/ASSESSMENT-CRITERIA.md` D4 updated to point at `ai/prompts.md` as the
+actual satisfying evidence, not `ai/session-summary.md`.
+
+**Pattern worth naming:** this is the second time a user question has caught me stating something
+as more load-bearing/required than it actually was (first: treating some CLAUDE.md defaults as if
+already decided before they were confirmed, P7→P8; now: overstating a file as deliverable-required
+when it wasn't). Worth being more careful to distinguish "required per the brief" from "a good idea
+we're choosing to do" when presenting new files going forward.
+
+## 21. Integrity Check #1 (P14) — run and fixed
+
+First run of the Integrity Check procedure defined in `CLAUDE.md` §"Integrity Check." Re-read every
+artefact fresh rather than trusting memory of writing them. Findings and resolution:
+
+**Fixed directly (objective corrections, no design judgement needed):**
+- Two broken cross-references: `DECISIONS.md` §2 pointed to "§8" twice when it meant §7 (both now
+  fixed); `ROADMAP.md`'s own compression-rationale pointer had the same §8→§7 bug.
+- §13 ("Open questions") was physically out of numeric order (sat after §19) — renumbered to §20,
+  now at the true end.
+- `ai/prompts.md` prompt-count references were stale ("P1–P10") — corrected to P1–P14.
+- `ROADMAP.md` Phase 3 still said "AC1–AC13" after AC14 was added to `CLAUDE.md` — synced.
+- `limit_hit` enum was lowercase in `CLAUDE.md`/`DECISIONS.md` prose, uppercase in the actual
+  schema — violated CLAUDE.md's own naming-convention rule; standardised to uppercase everywhere.
+- `design/` folder was missing from `CLAUDE.md`'s own "Repository layout" section — added, along
+  with the `ai/` file list catching up to reality (`tools-and-models.md`, `session-summary.md`).
+- Wireframe SVG mislabeled "completed — limit hit" as a "failure state" in its own section heading,
+  contradicting CLAUDE.md's explicit statement elsewhere that limit-hit is not one of the three
+  failure modes — heading corrected.
+- `specs/mcp-integration-spec.md` forward-referenced a future `mockdata/README.md` — would have
+  recreated the exact naming collision from §18. Changed to `mockdata/NOTES.md` pre-emptively.
+- Entity count targets were only specified for Supplier — added a target table for all four
+  entities to `CLAUDE.md`, sized to actually support every test scenario in §"Testing scenarios."
+
+**Fixed with a proposed resolution (real design gap, applied but flagged as overridable):**
+- `COMPLETED_PARTIAL` was underspecified — the spec promised exactly 4 UI states including
+  "completed with limit hit," but the wireframe's own worked example showed a *different* partial
+  outcome (a failed tool call, no limit hit) with no defined status for it. Resolution applied:
+  `COMPLETED_PARTIAL` fires for either cause; `limit_hit` (which can legitimately be `NONE`)
+  distinguishes which. Never silently shown as plain `COMPLETED` when the answer is actually
+  incomplete. Applied to `CLAUDE.md` (2 places) and `specs/mcp-integration-spec.md` §10.
+- Missing system-prompt requirement: nothing said the model must be explicitly instructed to state
+  a reason before each tool call — without it, `reasoning` would likely be empty in practice,
+  silently breaking AC10. Added a "System prompt must-haves" note to `CLAUDE.md`.
+
+**Flagged, resolved P15:** scope of the P14 "confirm before creating files" rule — confirmed
+artefact/documentation files only (`ai/`, `specs/`, `design/`, root docs). Routine implementation
+code in `mockdata/`, `mcp-server/`, `backend/`, `frontend/` during Phases 1–3 is exempt; instead,
+the file/module layout is announced at the start of each phase so there's a chance to object before
+a batch of code lands, not a per-file confirm. `CLAUDE.md` §"Working agreements" and §"What Claude
+Code should NOT do" updated accordingly.
+
+## 22. P16 — tool-selection rules & specs/agent-spec.md — LOCKED
+
+User question: does the agent have any rules for *how* it chooses tools, beyond "the model
+decides," and where should such rules live? Real gap — CLAUDE.md specified bounds and escalation
+but never tool-selection strategy. Six rules established (search-before-guessing an ID, no
+redundant calls, stop when sufficient, respect dependency order, never retry a deterministic
+failure, recognise multi-target tasks) — full detail with acceptance criteria in `specs/agent-spec.md`.
+
+**Document placement, decided:** user chose a new file (`specs/agent-spec.md`) over folding into
+`CLAUDE.md`, mirroring the existing compact-in-CLAUDE.md/full-in-specs pattern already used for
+the MCP integration spec — and asked it be written to `production-spec-checklist.md`'s discipline
+(testable acceptance criteria, explicit delegation boundaries, validation design, assumptions
+register), same standard already applied to `specs/mcp-integration-spec.md`.
+
+**`reasoning`-reliability, strengthened.** User asked whether we could "maximise" the chance the
+`reasoning` field always appears — proposed and applied a stronger mechanism: `reasoning` is now a
+**required input parameter on all 5 MCP tools**, schema-enforced (missing/empty → `VALIDATION_ERROR`
+like any other missing required field), not just a system-prompt request. This is strictly
+stronger than the P14/Integrity-Check-#1 fix (system-prompt instruction alone) — that instruction
+stays as a second layer, but the schema requirement is what actually guarantees it. Verified this
+doesn't weaken hard constraint #2: the model still freely chooses *which* tool and its domain
+arguments; `reasoning` is an additional required argument, not a constraint on the choice itself
+(explicit check in `specs/agent-spec.md` §4). Updated: all 5 tool schemas in
+`specs/mcp-integration-spec.md` §4, the trace-schema provenance note in §10, `CLAUDE.md`'s MCP tool
+contracts table and system-prompt-must-haves section, `ai/ROADMAP.md` Phase 0.
+
+## 23. Phase 1 kickoff: schema-first approach, and a real gap caught while implementing — LOCKED
+
+**User question (P17):** any other opportunity to establish formal schemas/structured data before
+building? **Answer: yes, and the ordering matters.** Rather than writing `mockdata/*.json` freehand
+against CLAUDE.md's prose entity tables and hoping it matches, Phase 1 writes **Pydantic models
+first** (`mcp-server/schemas.py`) — one model per entity (Supplier, Certification, Specification,
+QualityIncident) plus one input model per MCP tool (matching `specs/mcp-integration-spec.md` §4
+exactly, including the required `reasoning` field). These models are then the actual validation
+mechanism for the mock data (each JSON record is loaded through its Pydantic model, which fails
+loudly on any mismatch) — not just documentation of intent. Chosen over a separate prose "data
+schema" spec file because Pydantic models double as runtime code (FastAPI and the MCP server both
+consume Pydantic natively) — one artefact serves as both the formal schema and the implementation,
+rather than a spec file that could drift from the code the way a couple of Integrity Check findings
+already showed prose/schema can drift from each other.
+
+**Real gap caught applying this discipline, immediately:** writing the Pydantic `Supplier` model
+against CLAUDE.md's own entity table surfaced that E4's fixture ("Supplier's notes-style field
+contains embedded instruction-like text") has nowhere to live — Supplier has no free-text field in
+the spec. Classified via the 4-category taxonomy: **Design Gap** — the spec was clear about what it
+said, but silent on where the field actually was, because it was never checked against the entity
+model that was supposed to support it. Fixed by moving the fixture to `QualityIncident.description`,
+which already exists and is arguably more realistic (an incident description is more plausibly
+untrusted free text than a supplier profile field). `CLAUDE.md` E4 and `specs/mcp-integration-spec.md`
+§11 updated. This is a concrete, presentation-worthy example of the closed-build-loop discipline
+catching a real gap during implementation, not just during planning.
+
+## 24. Phase 1 code written and verified — LOCKED
+
+Wrote `mcp-server/schemas.py` (Pydantic models), `mockdata/*.json` (4 files: 18 suppliers, 20
+certifications, 25 specifications, 10 incidents), `mcp-server/server.py` (FastMCP-based server, 5
+tools), `mcp-server/requirements.txt`.
+
+**No Python interpreter existed in this dev environment** — checked `python`/`python3`/`py`; only
+a Windows Store execution-alias stub was present. User chose (P18) to install Python here via
+winget rather than defer verification or install elsewhere. Installed **Python 3.12.10** via
+`winget install --id Python.Python.3.12 -e --source winget --accept-package-agreements
+--accept-source-agreements`. PATH doesn't auto-refresh within an already-running PowerShell
+session (shell state doesn't persist across tool calls here either), so subsequent commands used
+the direct interpreter path.
+
+**Actually verified this time, not just reviewed:**
+- `pip install -r mcp-server/requirements.txt` succeeded (mcp, pydantic, and their dependencies).
+- `schemas.py` imports and validates all 4 mock data files cleanly (18/20/25/10 records).
+- `server.py` imports cleanly and loads all data.
+- Every tool function called directly and produced the exact designed output: `search_suppliers`
+  happy path (IT dairy suppliers); `get_supplier_profile` happy path with certs; `NOT_FOUND` on an
+  unknown supplier; the E2 zero-certification supplier (SUP-017) returns an empty list, not an
+  error; the E3 invalid-enum case (`category: "CHEESE"`) returns a clean `VALIDATION_ERROR`; a
+  **blank `reasoning`** correctly triggers `VALIDATION_ERROR` — the structural-enforcement design
+  from §22 actually works, confirmed, not just argued for; the E1 empty-result-set case returns
+  `{"results": [], "count": 0}`; `check_allergen_conflicts` correctly detects a GLUTEN conflict on
+  SPEC-019 and correctly `NOT_FOUND`s an unknown specification.
+- The `SUP-TIMEOUT-01` fixture measured at **12.0s elapsed**, confirmed longer than the 10s
+  per-call timeout budget (`CLAUDE.md` §"Loop bounds") — the fixture will correctly trip a real
+  timeout once Phase 2's backend enforces that bound.
+
+**Not yet tested:** the actual MCP stdio transport end-to-end (spawning `server.py` as a subprocess
+and speaking the MCP protocol to it, rather than calling the Python functions directly) — deferred
+to Phase 2, when the backend genuinely needs to do exactly that to connect.
+
+## 20. Open questions
+
+- Model tier (Haiku vs Sonnet) for the backend agent — provisional: start with Haiku, confirm during
+  build if tool-selection reasoning is strong enough.
+- Whether to git-init now or after initial scaffolding — will confirm with user before running
+  `git init` since it's a state-changing action worth flagging even though low-risk.
+- COMPLETED_PARTIAL semantics (Integrity Check #1, finding 8) — proposed resolution given to user,
+  pending confirmation.

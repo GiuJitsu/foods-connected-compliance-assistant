@@ -1,0 +1,28 @@
+# Separate training-program reference material — not part of this project
+AI FDE Training/
+
+# Secrets — never committed, read from environment only (CLAUDE.md hard constraint)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Node / frontend
+node_modules/
+dist/
+build/
+.vite/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Local Claude Code tooling config (machine-local, not project source)
+.claude/
