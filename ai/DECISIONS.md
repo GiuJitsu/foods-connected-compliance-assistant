@@ -13,16 +13,18 @@ Status tags: `LOCKED` (decided, don't revisit without new information), `OPEN` (
 
 ## RESUME POINT (updated at every meaningful step, per P17 — read this first)
 
-**Rewritten clean at P30, updated at P31, P35, P36, P40** — this block had drifted stale (stacked
-"next" notes from several rounds back, contradicting itself). Superseded content below is gone, not
-archived — history for each of these is in its numbered §, not here.
+**Rewritten clean at P30, updated at P31, P35, P36, P40, P41** — this block had drifted stale
+(stacked "next" notes from several rounds back, contradicting itself). Superseded content below is
+gone, not archived — history for each of these is in its numbered §, not here.
 
-**Where we are:** Phases 0, 0.5, 1, 2, 3, and 4 are all **DONE**. Phase 3 (`frontend/`, React +
-TypeScript + Vite) was designed as an approved Artifact mockup first, then built against the locked
-API contract, then verified with a real Playwright browser run against the real backend + real
+**Where we are:** Phases 0 through **5** are all **DONE**. Phase 3 (`frontend/`, React + TypeScript
++ Vite) was designed as an approved Artifact mockup first, then built against the locked API
+contract, then verified with a real Playwright browser run against the real backend + real
 Anthropic API — which found and fixed one genuine bug (a React StrictMode polling issue, §34) no
-other test in this project could have caught. Only Phase 5 (closed-loop gap-diagnosis pass) and
-Phase 6 (wrap-up) remain. Prompt count: P1–P40 logged in `ai/prompts.md`.
+other test in this project could have caught. Phase 5 (§35) closed the remaining honest `DOING`
+coverage gaps with mocked-backend Playwright tests, fixed a self-authored test-locator bug, and
+caught several `ASSESSMENT-CRITERIA.md` rows that were stale documentation, not incomplete work.
+Only **Phase 6 (wrap-up)** remains. Prompt count: P1–P41 logged in `ai/prompts.md`.
 
 **Tools installed this session that weren't present at the start:** Python 3.12 (P18), git + gh
 (P19), Node.js LTS (P39), `@playwright/test` + Chromium (P40, installed as an npm package since no
@@ -992,6 +994,56 @@ recorded honestly as `DOING`, not `DONE`, in `ai/ASSESSMENT-CRITERIA.md` F2/F5/F
 
 `ai/ROADMAP.md` Phase 3 marked DONE. `ai/ASSESSMENT-CRITERIA.md` F1, F3, F4, F7, F8 moved to DONE;
 F2, F5, F6, F9, A4 moved to DOING with the live-vs-code-reviewed distinction stated explicitly.
+
+## 35. P41 — Phase 5 closed-loop gap-diagnosis pass — LOCKED
+
+User asked for Phase 5 before wrap-up, plus a small real UX fix: clear the question field
+automatically after submitting instead of requiring a manual clear. Agreed it makes sense — standard
+pattern for a single-shot ask-a-question flow, and it reinforces the single-shot interaction model
+(§16) rather than inviting the user to think of it as an editable running query. Fixed in
+`frontend/src/components/Banner.tsx` (`setValue("")` after a successful submit).
+
+**Phase 5 itself, run as `ai/ROADMAP.md` specifies**: run the whole thing once end-to-end, classify
+every real gap against the 4-category taxonomy, fix only the highest-leverage ones — no multi-round
+convergence. Two real gap classes found:
+
+**Gap 1 (Design Gap, highest leverage) — the honest `DOING` rows from §34 were real, fixable
+coverage gaps, not just documentation debt.** `ai/ASSESSMENT-CRITERIA.md` F2/F5/F6/F9 were left at
+`DOING` because a real backend run can't reliably force the 3 `FAILED` sub-reasons, a limit-hit, or
+a real hallucination on demand. Closed properly: `frontend/tests/e2e-mocked-states.spec.ts` — mocks
+the network layer (`page.route`) with a `TaskTrace` payload matching `backend/schemas.py`'s exact
+shape, then verifies the UI renders each state correctly. This is a legitimate, distinct
+verification from the real-backend tests: it proves "does the UI faithfully render this state,"
+which is exactly what F2/F5/F6/F9/A4 ask — the separate question of "does the backend ever actually
+produce this state" is already proven by `backend/tests/test_agent_loop_failures.py` /
+`test_loop_bounds.py` / `test_grounding.py`. 8 new tests, all passing; a screenshot of the 4
+tool-error categories together (`test-results/screenshots/05-error-categories.png`) confirms the
+five state colors (ok/validation/not-found/timeout/server) read as genuinely distinct, not just
+pass in code. `ai/ASSESSMENT-CRITERIA.md` F2/F5/F6/F9/A4 moved `DOING` → `DONE`.
+
+**Gap 2 (Test Problem, caught immediately) — my own first draft of those new tests had 4 ambiguous
+Playwright locators.** `getByText("Tools unavailable")` (etc.) matched both the `StatusBanner`'s
+`"Failed — tools unavailable"` text and the `FailureCard`'s `"Tools unavailable"` tag — a strict-mode
+violation, not a real app bug. Fixed by scoping to `.answer-tag` specifically. Worth recording
+because it's the same shape as the P30/P33 self-caught mistakes: verify before trusting, even your
+own most-recent code.
+
+**Gap 3 (documentation staleness, found via a full re-read of `ai/ASSESSMENT-CRITERIA.md`) — several
+rows never got updated despite the evidence already existing on disk**, not because the work wasn't
+done: D3 said "P1–P31" (stale prompt count, now P1–P40) and was left `DOING` when the requirement is
+continuously satisfied; D6 still referenced a `[TODO — Phase 3]` frontend row that Phase 3 closed out
+two commits ago; A1 (agent design), A2 (untrusted content handling), and A5 (AI-tool direction
+evidence) all sat at `TODO`/`DOING` despite `specs/agent-spec.md`, the E4 fixture tests, the
+grounding backstop tests, and the entire `ai/prompts.md`/`ai/DECISIONS.md` paper trail already
+existing as real evidence — nobody had gone back to flip the status once the evidence landed. All
+fixed. Left honestly alone: A3 (codebase quality) and A6 (presentation capability) — both are
+explicitly the user's own self-assessment/live-presentation questions, not something Claude Code
+should mark `DONE` on their behalf; A6's evidence column now points at the concrete material ready
+to use (the StrictMode bug, the Phase 2 gap log, the E4 spec-gap correction) without claiming the
+row itself is complete.
+
+No third round run — per the roadmap's own "no multi-round convergence" instruction, these three
+gaps were fixed once and the pass stops here, not iterated further.
 
 ## 20. Open questions
 

@@ -258,3 +258,7 @@ ok, let's go with this. Start building
 ## P40
 
 install playwright
+
+## P41
+
+let's do phase 5 before wrapping up. One thing that I'd like it so clear the qiestion field automatically without me having to clear it to ask the next question. Does it make sense?

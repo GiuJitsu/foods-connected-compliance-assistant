@@ -21,6 +21,7 @@ export function Banner({ onSubmit, busy }: BannerProps) {
     }
     setValidationError(null);
     onSubmit(trimmed);
+    setValue("");
   }
 
   return (
