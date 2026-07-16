@@ -113,7 +113,7 @@ Full reasoning and chronological log: `ai/DECISIONS.md`. Highlights:
 
 This project was built with Claude Code (Sonnet 5) directing the build, using an Anthropic API key
 (starting with Claude Haiku, extended thinking enabled — see `CLAUDE.md` §"Tech stack" and
-§"On chain-of-thought"; may move to Sonnet if Phase 2 testing shows Haiku isn't strong/fast enough)
+`specs/agent-spec.md` §10 "On Chain-of-Thought"; may move to Sonnet if Phase 2 testing shows Haiku isn't strong/fast enough)
 for the product agent itself. Full session artefacts — CLAUDE.md, every significant prompt
 (numbered), the decision log, and a tools/models note — are in `ai/`, as required by the assessment
 brief. Full detail: `ai/tools-and-models.md`.

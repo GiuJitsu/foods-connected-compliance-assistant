@@ -36,10 +36,10 @@ Status legend: `TODO` / `DOING` / `DONE` / `CUT` (deliberately descoped — must
 | F2 | User can submit a task and see progress + result, with 4 distinct overall states (in progress/completed/completed-partial/failed) | TODO | `CLAUDE.md` §"Frontend transparency requirements" |
 | F3 | Per tool call: shows tool name, input, result summary, **and explicit success/error status** (not folded together) | TODO | `CLAUDE.md` §"Frontend transparency requirements"; trace schema in `specs/mcp-integration-spec.md` §10 |
 | F4 | A user can look at a completed task and understand what the agent did and why the answer is what it is (this is the transparency bar, not just "logs exist") | TODO | |
-| F5 | Sensible, visually distinct states shown for each of the 3 failure modes (MCP unreachable / tool error / model failure) — user can tell *which* failure happened | TODO | `CLAUDE.md` §"Escalation / failure behaviour" |
+| F5 | Sensible, visually distinct states shown for each of the 3 failure modes (MCP unreachable / tool error / model failure) — user can tell *which* failure happened | TODO | `specs/agent-spec.md` §9 "Escalation / Failure Behaviour" |
 | F6 | Explicit limit-hit indicator (iteration cap or timeout) shown as its own labelled state, never silently blended into a normal-looking answer | TODO | `limit_hit` field, `specs/mcp-integration-spec.md` §10 |
 | F7 | Per-call `reasoning` note shown (why the agent called that tool) + static "how this agent works" info panel + final-answer basis line (call counts/model/time) + raw-trace-JSON view | TODO | `CLAUDE.md` §"Frontend transparency requirements" #3/#5/#7/#8; `design/ui-mockup/` |
-| F8 | Raw extended-thinking shown per tool-call step, collapsed by default, with a clear non-authoritative caption | TODO | `CLAUDE.md` §"On chain-of-thought"; `thinking` field, `specs/mcp-integration-spec.md` §10 |
+| F8 | Raw extended-thinking shown per tool-call step, collapsed by default, with a clear non-authoritative caption | TODO | `specs/agent-spec.md` §10 "On Chain-of-Thought"; `thinking` field, `specs/mcp-integration-spec.md` §10 |
 
 ## Model access
 

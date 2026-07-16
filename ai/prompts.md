@@ -149,3 +149,17 @@ one of the requirements is having a repository. I also have an account on github
 ## P21
 
 name is Giuseppe
+
+## P22
+
+ok done. you can push. Tell me something. What re the rules upon witch the agent decides whether or not to call a tool and what to do exactly? is there no systematic decision making?
+
+I don't like the sopec split between claude file and sagent spec. Why don'[t we have it in one place? it's much cleaner?
+
+## P23
+
+[Response to clarifying questions "Where should the agent spec consolidate to?", "GitHub repo name?", "Repo visibility?"]
+
+- Consolidation: "specs/agent-spec.md (recommended)"
+- Repo name: "foods-connected-compliance-assistant"
+- Visibility: "Public"

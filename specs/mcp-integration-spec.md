@@ -220,7 +220,7 @@ Empty `allergens_to_avoid` → `{"error": "INVALID_INPUT", "message": "allergens
 | Invalid enum / malformed input | Tool error result, specific error code | No retry — this will fail identically every time; agent should adjust its input or give up on that path |
 | Unknown ID on a lookup tool (`get_supplier_profile`, `check_allergen_conflicts`) | Explicit `*_NOT_FOUND` error | No retry — same reasoning |
 | Simulated timeout (`SUP-TIMEOUT-01` only) | No response within 10s | Backend agent loop treats as a tool-call timeout: log the failure, continue the loop with remaining budget, do not retry the same call automatically (retrying a deterministic timeout wastes iteration budget) |
-| MCP server process unreachable/crashed | Connection error at the transport level, not a tool-level error | Backend fails the task immediately at loop start with a clear "tools unavailable" state — does not attempt the loop at all (see CLAUDE.md §"Escalation / failure behaviour" #1) |
+| MCP server process unreachable/crashed | Connection error at the transport level, not a tool-level error | Backend fails the task immediately at loop start with a clear "tools unavailable" state — does not attempt the loop at all (see `specs/agent-spec.md` §9 "Escalation / Failure Behaviour" #1) |
 
 ---
 
@@ -273,7 +273,7 @@ per-call entries, and one task-level summary.
   "tool_name": "string",
   "input": { "...": "as sent to the tool" },
   "reasoning": "string — the tool call's own required `reasoning` input parameter (§4), copied verbatim into the trace; not parsed from preceding assistant text and not fabricated after the fact",
-  "thinking": "string, nullable — raw extended-thinking content for this step, when the model produced one; shown in the UI collapsed by default with an explicit non-authoritative caption (CLAUDE.md §'On chain-of-thought')",
+  "thinking": "string, nullable — raw extended-thinking content for this step, when the model produced one; shown in the UI collapsed by default with an explicit non-authoritative caption (specs/agent-spec.md §10 'On Chain-of-Thought')",
   "result_summary": "string — short human-readable summary, not the full raw payload",
   "success": "boolean",
   "error": {
@@ -289,7 +289,7 @@ enum/malformed input), `NOT_FOUND` (unknown ID on a lookup tool), `TIMEOUT` (the
 show *why* a call failed, not just that it failed (CLAUDE.md §"Frontend transparency requirements").
 `reasoning` is deliberately a short, explicit, schema-required rationale — not raw hidden
 chain-of-thought, which is surfaced separately via `thinking` and is not appropriate to conflate
-with this field (`CLAUDE.md` §"On chain-of-thought").
+with this field (`specs/agent-spec.md` §10 "On Chain-of-Thought").
 
 **Task-level summary** (one per task, wraps the ordered list of per-call entries):
 ```json

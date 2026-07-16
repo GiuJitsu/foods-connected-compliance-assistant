@@ -15,7 +15,7 @@ Required by the brief's deliverable #2: *"a brief note on which tools and models
 
 - **Anthropic API** (user-supplied key) — powers the product agent's reasoning and tool-selection
   loop. Model tier: starting with **Claude Haiku**, extended thinking enabled (see `CLAUDE.md`
-  §"On chain-of-thought" and §"Tech stack" for the cost/latency trade-off); may move to Sonnet if
+  `specs/agent-spec.md` §10 and `CLAUDE.md` §"Tech stack" for the cost/latency trade-off); may move to Sonnet if
   Haiku's tool-selection reasoning or latency proves inadequate during Phase 2 testing — whichever
   model is actually used ships shown live in the UI's info panel and every task's basis line
   (§"Frontend transparency requirements"), so this is never left ambiguous to an end user.

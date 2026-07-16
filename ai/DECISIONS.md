@@ -13,10 +13,10 @@ Status tags: `LOCKED` (decided, don't revisit without new information), `OPEN` (
 
 ## RESUME POINT (updated at every meaningful step, per P17 — read this first)
 
-**Where we are:** Phase 0, 0.5, 1 done. Python 3.12.10 installed via winget; `mcp-server/schemas.py`,
-`mockdata/*.json`, `mcp-server/server.py` all written **and verified working** (every tool function
-tested directly, including the E1–E3 edge cases, blank-reasoning enforcement, and the 12s timeout
-fixture — §24). Next: Phase 2, the backend agent loop.
+**Where we are:** Phase 0, 0.5, 1 done and verified. Git repo initialised, GitHub remote created and
+pushed: https://github.com/GiuJitsu/foods-connected-compliance-assistant (public). `specs/agent-spec.md`
+is now the **single, complete** product-agent spec (§26) — `CLAUDE.md` §"Product agent design" is
+just a pointer. Next: commit the consolidation, push, then Phase 2 (backend agent loop).
 
 **What exists:** `CLAUDE.md` (full spec), `specs/mcp-integration-spec.md`, `specs/agent-spec.md`,
 `README.md`, `design/ui-mockup/` (wireframe + notes), `ai/ROADMAP.md`, `ai/ASSESSMENT-CRITERIA.md`,
@@ -29,8 +29,12 @@ roadmap status every step; confirm before creating new artefact/doc files (code 
 asked; keep this Resume Point current without being asked; run an Integrity Check periodically
 (procedure defined in `CLAUDE.md`, one has run — see §21).
 
-**Immediate next action:** Phase 2 — backend agent loop (FastAPI + Anthropic API + MCP client,
-bounded loop, trace recording).
+**Immediate next action:** waiting on user to run `gh auth login` and confirm, so the GitHub remote
+can be created and pushed (§25). After that: Phase 2 — backend agent loop (FastAPI + Anthropic API
++ MCP client, bounded loop, trace recording).
+
+**Git status:** local repo initialised, 2 commits made (`d234b33` spec/design, `9312db9` Phase 1
+implementation), no remote configured yet.
 
 **Known open items:** model tier (Haiku vs Sonnet) — provisional Haiku, confirm empirically in
 Phase 2/4; git-init timing — confirm with user first; MCP stdio transport still untested
@@ -590,6 +594,62 @@ the direct interpreter path.
 **Not yet tested:** the actual MCP stdio transport end-to-end (spawning `server.py` as a subprocess
 and speaking the MCP protocol to it, rather than calling the Python functions directly) — deferred
 to Phase 2, when the backend genuinely needs to do exactly that to connect.
+
+## 25. Git repository + GitHub — IN PROGRESS
+
+User (P19) asked for a git repo with commits at every important step and a GitHub remote, and
+(P20) confirmed: exclude `AI FDE Training/` entirely (it's separate, unrelated training material,
+not part of this submission — including ~14,900 unrelated files would bury the actual codebase);
+GitHub auth handled by the user running `gh auth login` interactively themselves, then confirming
+back, since `gh auth login`'s browser/token flow can't run inside a non-interactive tool call.
+
+**Done:**
+- Installed **Git 2.55.0** and **GitHub CLI 2.96.0** via winget (same pattern as Python — no git/gh
+  existed in this environment either).
+- Set global git identity: `Giuseppe <giuseppe.ardito@gmail.com>` (P21).
+- `.gitignore` created: excludes `AI FDE Training/`, secrets (`.env*`), Python/Node build noise,
+  and `.claude/` (Claude Code's local permission settings — found while checking `git status` for
+  the first time; it's machine-local tooling config, not project source, so excluded on the same
+  reasoning as everything else that isn't "the codebase").
+- `git init` at the project root.
+- Two commits made: (1) all spec/design/tracking artefacts as of repo creation — `CLAUDE.md`,
+  `specs/`, `design/`, `README.md`, `ai/*`, the PDF; (2) the verified Phase 1 implementation —
+  `mcp-server/`, `mockdata/`. Not a single final commit, and not fake fine-grained history either —
+  two honest logical units reflecting real separation (spec vs. verified implementation), with
+  future commits landing incrementally from here as real work happens.
+
+**Still open:** user needs to run `gh auth login` and confirm; then `gh repo create` (name/visibility
+TBD — ask when this comes up) + push.
+
+## 26. Agent spec fully consolidated into specs/agent-spec.md — LOCKED
+
+User pushback (P22): the CLAUDE.md/agent-spec.md compact/full split — which worked well for the
+MCP integration spec — made agent *behaviour* harder to understand, not easier, since
+understanding "how does the agent decide and act" requires identity, scope, bounds, rules, and
+failure handling together, not two files stitched together mentally. Agreed (P23): fully
+consolidate into `specs/agent-spec.md`.
+
+**Moved out of `CLAUDE.md` entirely, now living only in `specs/agent-spec.md`:** Identity &
+Purpose, Interaction Model, Scope, Loop Bounds, Untrusted Content Handling, System Prompt
+Must-Haves (merged with the existing Reasoning-Capture Mechanism section), Escalation/Failure
+Behaviour, On Chain-of-Thought, What the Product Agent Should NOT Do. `CLAUDE.md` §"Product agent
+design" is now a 2-paragraph pointer with three "quick facts" (loop bounds, delegation, untrusted
+content) for readers who don't need the full depth.
+
+**Also added while consolidating (P22, "is there no systematic decision-making?"):** a
+**Tool-Selection Decision Flow** — the same 6 rules (R1–R6), now also framed as an ordered
+5-step check the agent runs each iteration (is the task answerable? → does the next step need an
+ID? → does it imply multiple targets? → would this repeat/retry a call? → otherwise make the next
+closing call). This doesn't add any hardcoded sequencing (would violate hard constraint #2) — it
+orders the *considerations*, not the *tool choice*, which stays the model's judgement call.
+`specs/agent-spec.md` §5.
+
+Every cross-reference to the moved sections was updated across `CLAUDE.md`,
+`specs/mcp-integration-spec.md`, `README.md`, `ai/ASSESSMENT-CRITERIA.md`,
+`ai/tools-and-models.md`, and `design/ui-mockup/NOTES.md` — checked via grep, not assumed correct
+(the pattern from Integrity Check #1's reference-issue findings). Historical entries in this file
+(§11, §12, §14, §18, earlier) were **not** rewritten — they're accurate records of what was true
+when written (content was in `CLAUDE.md` at the time), not live pointers.
 
 ## 20. Open questions
 

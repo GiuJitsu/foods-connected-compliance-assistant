@@ -77,5 +77,5 @@ it acted."* The short curated `reasoning` line stays inline and always visible r
 `thinking` block is the deeper, optional layer underneath it. Trade-off accepted: extended thinking
 adds output tokens (cost) and latency per call — a real consideration against Haiku's
 cost/speed rationale, and something to calibrate for real once Phase 2 (backend agent loop) is
-built and we can see actual latencies against the 60s total-task timeout. Full decision:
-`ai/DECISIONS.md` §18.
+built and we can see actual latencies against the 60s total-task timeout. Full spec:
+`specs/agent-spec.md` §10 "On Chain-of-Thought". Original decision: `ai/DECISIONS.md` §18.
