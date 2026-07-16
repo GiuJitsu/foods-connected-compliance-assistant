@@ -118,6 +118,30 @@ shows the outcome and exactly what the agent did to get there. Full brief:
 - `backend/` — Python backend: API, agent loop, MCP client wiring. `[Phase 2]`
 - `frontend/` — React + TypeScript app. `[Phase 3]`
 
+## Files to keep in sync (added P24, per "keep tracking and updating every single file")
+
+Checklist of what needs touching as work proceeds, and when — so nothing gets forgotten mid-phase:
+
+| File | Update when |
+|---|---|
+| `ai/DECISIONS.md` (Resume Point + numbered sections) | Every meaningful step, proactively — this is the resumability mechanism |
+| `ai/prompts.md` | Every significant user prompt, verbatim, numbered — proactively |
+| `ai/ROADMAP.md` | Phase status changes; any new step added to a phase |
+| `ai/ASSESSMENT-CRITERIA.md` | Any row's status changes (TODO → DOING → DONE/CUT) |
+| `CLAUDE.md` (this file) | Any new locked rule or working agreement; repository layout when a new top-level folder appears |
+| `specs/mcp-integration-spec.md` | Any MCP tool contract changes — before the code, not after |
+| `specs/agent-spec.md` | Any agent-behaviour change — before the system prompt is updated, not after |
+| `README.md` | Any user-facing fact changes: what's runnable, example questions, dataset shape, known limitations |
+| `ai/tools-and-models.md` | Model tier changes (e.g. Haiku → Sonnet) |
+| `ai/session-summary.md` | End of each phase, narrative update |
+| `git` | A commit at every important step, pushed (§"Working agreements") |
+
+**Templates referenced throughout this project** (all in `AI FDE Training/Reference/`, read-only):
+`claude-md-examples-guide.md` (this file's own Tier-3 standard), `integration-spec-template.md`
+(shape of `specs/mcp-integration-spec.md`), `production-spec-checklist.md` (shape of
+`specs/agent-spec.md`), `spec-ambiguity-vs-builder-mistakes.md` (the 4-category gap-diagnosis
+taxonomy used throughout).
+
 ## Use case & MCP server
 
 **Custom, self-built MCP server** over a mock food-supply-chain-compliance dataset — chosen over
@@ -360,6 +384,19 @@ acceptance criterion and confirm it holds — the same closed-build-loop discipl
 this project (build → check against spec → diagnose any gap by the 4-category taxonomy → fix),
 scoped specifically to the UI. This is a good candidate for a small persisted Playwright test
 (§"Testing requirements") if time allows, not just a manual one-off check.
+
+### Visual quality (added P24)
+
+AC1–AC14 are functional/transparency acceptance criteria — they say nothing about whether the UI
+*looks* good. Once they pass, a visual-quality pass: use a real component library or a consistent
+small design system (not unstyled HTML), consistent spacing/typography/color scale, basic
+accessibility (colour contrast, visible focus states, readable font sizes), and a responsive layout
+that doesn't break on a narrower window. Sequenced explicitly in `ai/ROADMAP.md` Phase 3 as the
+last sub-step, and the first thing to cut deliberately (recorded in `README.md` "known
+limitations") if the ~4h time box is tight — functional transparency outranks visual polish per the
+brief's own grading emphasis, but polish is still worth real effort if time allows, since "quality
+and consistency of the codebase" is graded and a frontend that looks thrown-together undercuts that
+impression even when the logic underneath is solid.
 
 ## Tech stack
 

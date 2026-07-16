@@ -163,3 +163,16 @@ I don't like the sopec split between claude file and sagent spec. Why don'[t we 
 - Consolidation: "specs/agent-spec.md (recommended)"
 - Repo name: "foods-connected-compliance-assistant"
 - Visibility: "Public"
+
+## P24
+
+how can we make sure that tha model doesn't come back with an allucination if thwe data is not available?
+
+When and where do we create the system prompts? or the agent spec should be sufficient? the exercises explicitly mentions system prompts. I guess they should guide how the agent works? Correct. It's time that we get more accurate and granular
+also. the readme file should explain what you can actually do. provide examples? what data is available to pull from
+
+also keep tracking and updating every single file. Save state before compression. Make sure claude contains reference to templates and files to aupdate during the process
+
+when do we start building the MCP servers and the tools associated? this also need to be documented in the readme file
+
+Add to the roadmap to make UI more visually appealing and match it with the best UX standard

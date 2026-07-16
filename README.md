@@ -1,8 +1,11 @@
 # Foods Connected — Compliance Assistant
 
-> **Status: living document, Phase 0 + 0.5 (spec + UI mockup) complete, Phase 1 (mock data + MCP server) next.**
-> Sections below are written against the spec in `CLAUDE.md` and will be completed/corrected as
-> each build phase lands — see `ai/ROADMAP.md` for the phase-by-phase plan and current position.
+> **Status: living document. Phase 0, 0.5, and 1 (spec, UI mockup, mock data + MCP server) are
+> complete and verified — the MCP server actually runs and every tool has been tested directly.
+> Phase 2 (backend agent loop) is next.** Sections below are written against the spec in
+> `CLAUDE.md` and `specs/agent-spec.md`, and will be completed/corrected as each build phase lands
+> — see `ai/ROADMAP.md` for the phase-by-phase plan and current position. Repo:
+> https://github.com/GiuJitsu/foods-connected-compliance-assistant
 
 A take-home technical assessment (AI Engineering role, Foods Connected): a web app where a user
 submits a task in natural language, a Python backend runs a bounded AI agent loop over a
@@ -47,6 +50,38 @@ no real Foods Connected client, supplier, or product data is used anywhere.
 Visual reference for all of the above: [`design/ui-mockup/wireframe.svg`](design/ui-mockup/wireframe.svg)
 (and its companion [`design/ui-mockup/NOTES.md`](design/ui-mockup/NOTES.md)).
 
+## What you can ask — examples
+
+Real questions the agent can answer against the actual mock dataset (see "Available data" below).
+Each of these needs the agent to chain 2+ tool calls on its own — none of these are hardcoded paths:
+
+- *"Which dairy suppliers have an expired certification?"* — searches suppliers by category, then
+  checks each one's certifications.
+- *"Is supplier SUP-013 currently compliant?"* — a direct lookup when an ID is already known.
+- *"Are there any open recalls affecting Alpine Milk Co's products?"* — resolves the supplier, finds
+  its specifications, then checks each for quality incidents.
+- *"Does the Croissants 4pk specification contain any allergens I should avoid if I'm allergic to
+  gluten and eggs?"* — a direct allergen-conflict check.
+- *"Which suppliers in Italy have a valid BRCGS certification?"* — filtered search plus per-supplier
+  verification.
+- *"What quality incidents have there been for seafood suppliers this year?"* — a question with
+  **no matching data by design** (worth trying deliberately — see below).
+
+## Available data
+
+The mock dataset (`mockdata/`, loaded by the MCP server at startup — see `specs/agent-spec.md` §15
+for why the agent must never fabricate an answer when a query legitimately returns nothing):
+
+| Entity | Count | Detail |
+|---|---|---|
+| Suppliers | 18 | Categories: Dairy, Produce, Meat, Bakery, Seafood. Countries: IT, FR, ES, NO, GB, DE, PL, LV. Risk ratings: Low/Medium/High. |
+| Certifications | 20 | Standards: BRCGS, GLOBALG.A.P., ISO 22000, SALSA. Statuses: Valid, Expired, Suspended. One supplier (SUP-017) deliberately has zero certifications. |
+| Product specifications | 25 | Allergen tags where relevant (milk, gluten, eggs, fish, shellfish, sesame, etc.); some have none. |
+| Quality incidents | 10 | Types: Recall, Complaint, Non-conformance. Most specifications have none at all — a legitimate "no incidents found" answer, not a gap. |
+
+Every record is fabricated for this demo — no real Foods Connected client, supplier, or product
+data is used anywhere.
+
 ## Use case & MCP service
 
 **Custom, self-built MCP server** over a mock food-supply-chain compliance dataset (suppliers,
@@ -56,6 +91,26 @@ in public research — see `ai/DECISIONS.md` §8), a fully deterministic offline
 flakiness during presentation), and full control to deliberately build in the failure-mode and
 untrusted-content scenarios the assessment specifically grades. Full trade-off analysis:
 `ai/DECISIONS.md` §5.
+
+## MCP server & tools — built and verified (Phase 1)
+
+The MCP server (`mcp-server/server.py`, Python `mcp` SDK, stdio transport) exposes 5 read-only
+tools over the dataset above. Every tool requires a `reasoning` argument — schema-enforced, not
+just requested — so the "why did the agent do that" trail can never be silently empty (full
+rationale: `specs/agent-spec.md` §6).
+
+| Tool | What it does |
+|---|---|
+| `search_suppliers` | Find suppliers by name, category, country, or risk rating |
+| `get_supplier_profile` | Full profile for one supplier plus all its certifications |
+| `search_specifications` | Find product specifications by name, supplier, or category |
+| `search_quality_incidents` | Find recalls/complaints/non-conformances by specification, supplier, date, or type |
+| `check_allergen_conflicts` | Check whether a specification's allergens overlap with a given avoid-list |
+
+Full contracts (input/output schemas, error behaviour, retry policy): `specs/mcp-integration-spec.md`.
+Built and verified directly (Phase 1, `ai/DECISIONS.md` §24) — happy path, every edge case (E1–E6),
+the blank-`reasoning` rejection, and the deliberate 12-second timeout fixture (`SUP-TIMEOUT-01`) all
+tested against the running server, not just reviewed.
 
 ## Architecture at a glance
 
@@ -74,10 +129,20 @@ Full technical spec (entities, tool contracts, agent design, loop bounds, failur
 
 ## How to run
 
-`[TODO — filled in once Phase 1–3 are built. Will include: required environment variables
-(ANTHROPIC_API_KEY at minimum), backend/frontend/MCP-server startup commands, and — if a mock model
-adapter is ever added — how to toggle it. No mock adapter is currently planned; a real Anthropic
-API key is being used throughout, see ai/DECISIONS.md §4.]`
+**MCP server (Phase 1 — runnable today):**
+```
+cd mcp-server
+pip install -r requirements.txt
+python server.py
+```
+Runs over stdio — it's meant to be spawned by the backend (Phase 2), not talked to directly in a
+terminal. To sanity-check it standalone, `python -c "import server; print(server.search_suppliers(reasoning='test', category='DAIRY'))"`
+from inside `mcp-server/` will run one tool call directly against the loaded mock data.
+
+**Backend + frontend:** `[TODO — filled in once Phase 2–3 are built.]` Will include: required
+environment variables (`ANTHROPIC_API_KEY` at minimum), startup commands for both, and — if a mock
+model adapter is ever added — how to toggle it. No mock adapter is currently planned; a real
+Anthropic API key is being used throughout (`ai/DECISIONS.md` §4).
 
 ## Key decisions
 
@@ -88,6 +153,9 @@ Full reasoning and chronological log: `ai/DECISIONS.md`. Highlights:
 - Agent loop bounded to 8 tool calls / 10s per call / 60s total.
 - Tool results always treated as untrusted data, never as instructions (tested via a deliberately
   planted embedded-instruction record in the mock data).
+- Explicit grounding/anti-hallucination rule: every claim in the final answer must trace to an
+  actual tool result; an empty search result or a `NOT_FOUND` must be reported honestly, never
+  papered over with an invented answer (`specs/agent-spec.md` §15).
 - Playwright MCP used only as a developer testing tool, never part of the product agent's own tool
   catalog, and not used to script the interview demo.
 

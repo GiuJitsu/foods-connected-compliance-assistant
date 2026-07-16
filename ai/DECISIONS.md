@@ -14,9 +14,13 @@ Status tags: `LOCKED` (decided, don't revisit without new information), `OPEN` (
 ## RESUME POINT (updated at every meaningful step, per P17 — read this first)
 
 **Where we are:** Phase 0, 0.5, 1 done and verified. Git repo initialised, GitHub remote created and
-pushed: https://github.com/GiuJitsu/foods-connected-compliance-assistant (public). `specs/agent-spec.md`
-is now the **single, complete** product-agent spec (§26) — `CLAUDE.md` §"Product agent design" is
-just a pointer. Next: commit the consolidation, push, then Phase 2 (backend agent loop).
+pushed: https://github.com/GiuJitsu/foods-connected-compliance-assistant (public, 3 commits so
+far). `specs/agent-spec.md` is the **single, complete** product-agent spec (§26), now including a
+grounding/anti-hallucination rule (§15) and a literal draft system prompt (§16) — both added P24
+(§27). `README.md` substantially expanded with example questions, dataset summary, and MCP-server
+documentation. `CLAUDE.md` has a new "Files to keep in sync" checklist. `ai/ROADMAP.md` Phase 3 has
+a visual-quality sub-step. Next: commit + push this batch, then Phase 2 (backend agent loop) — the
+literal system prompt in `specs/agent-spec.md` §16 is ready to wire in directly.
 
 **What exists:** `CLAUDE.md` (full spec), `specs/mcp-integration-spec.md`, `specs/agent-spec.md`,
 `README.md`, `design/ui-mockup/` (wireframe + notes), `ai/ROADMAP.md`, `ai/ASSESSMENT-CRITERIA.md`,
@@ -650,6 +654,54 @@ Every cross-reference to the moved sections was updated across `CLAUDE.md`,
 (the pattern from Integrity Check #1's reference-issue findings). Historical entries in this file
 (§11, §12, §14, §18, earlier) were **not** rewritten — they're accurate records of what was true
 when written (content was in `CLAUDE.md` at the time), not live pointers.
+
+## 27. P24 — grounding rule, system prompt draft, README expansion, sync checklist, UI polish — LOCKED
+
+Five items in one prompt; handled together, recorded together.
+
+**1. Anti-hallucination / grounding rule (real gap, now fixed).** User asked how we prevent the
+model from hallucinating when data isn't available. The data layer already returns clean empty
+results (`count: 0`) and explicit `NOT_FOUND` errors, but nothing told the *model* what to do with
+them — a real gap, not just an oversight, since an empty array is exactly the kind of thing a model
+can paper over with an invented answer. New `specs/agent-spec.md` §15: every claim in the final
+answer must trace to an actual tool result; empty/`NOT_FOUND` results must be reported honestly.
+Added as validation edge case 6 + failure mode 4 (§12) and assumption A4 (§13, flagged as the
+highest-severity assumption in the register — undetected hallucination directly undermines the
+brief's trust requirement).
+
+**2. System prompt: when/where, answered.** User asked whether `specs/agent-spec.md`'s
+requirements-checklist (§8) is sufficient, or whether the literal prompt text needs writing, and
+when. Answer: the checklist alone isn't enough — the brief explicitly wants the system prompt
+covered in the presentation, so a literal, usable draft now exists (`specs/agent-spec.md` §16),
+written now as part of the spec rather than deferred to Phase 2, so Phase 2 wires it in directly.
+Expected to be refined once Phase 4 shows real model behaviour, not treated as final.
+
+**3. README expanded**: "What you can ask" (6 concrete example questions, including one
+deliberately zero-result question to invite testing the grounding rule), "Available data" (real
+counts now that Phase 1 exists: 18/20/25/10), "MCP server & tools" (documents Phase 1 is built and
+verified, lists all 5 tools plainly), "How to run" updated with real, runnable commands for the MCP
+server (backend/frontend still `[TODO]`, honestly).
+
+**4. "When do we start building the MCP server?" — clarification, not a new decision.** This was
+already done and verified in Phase 1 (§24) before this prompt; the user's question suggested it
+hadn't registered as complete. Answered directly in chat rather than assuming the question implied
+a design change, and used it as the trigger to fix the real, related gap: `README.md` didn't yet
+document that it was built, which is a legitimate documentation gap regardless of the question's
+premise.
+
+**5. "Files to keep in sync" checklist added to `CLAUDE.md`** (per "make sure claude contains
+reference to templates and files to update during the process") — a table of every tracked file
+and when to touch it, plus an explicit list of the `AI FDE Training/Reference/` templates this
+project's specs were built from, so both are scannable in one place rather than scattered across
+`ai/DECISIONS.md` history.
+
+**6. UI visual-quality item added** to `ai/ROADMAP.md` Phase 3 and `CLAUDE.md` §"Visual quality" —
+sequenced explicitly *after* AC1–AC14 (functional/transparency criteria), and named as the first
+thing to cut deliberately if the time box is tight, consistent with the brief's own grading
+emphasis (functional transparency and agent design over visual polish) while still taking "quality
+and consistency of the codebase" seriously if time allows.
+
+All committed and pushed together as one logical unit (§25 pattern continues).
 
 ## 20. Open questions
 
