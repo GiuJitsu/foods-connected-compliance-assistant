@@ -53,7 +53,7 @@ Status legend: `TODO` / `DOING` / `DONE` / `CUT` (deliberately descoped — must
 
 | # | Requirement | Status | Evidence |
 |---|-------------|--------|----------|
-| T1 | Automated tests "where they earn their place" | DOING | 19 backend tests (`backend/tests/`) against `FakeModelClient`/`FakeMCPClient`, no network/spend needed, plus 3 real-MCP-protocol integration tests. MCP-tool-level tests against `mockdata/` still to add. |
+| T1 | Automated tests "where they earn their place" | DOING | 19 backend tests (`backend/tests/`) against `FakeModelClient`/`FakeMCPClient`, no network/spend needed, plus 3 real-MCP-protocol integration tests. Still to add (Phase 4, `ai/ROADMAP.md`): `mcp-server/tests/` for E1–E6, and one true HTTP-level end-to-end test (real `run_task()` over the API, not stubbed). Deliberately not adding: an automated test against the real Anthropic API (cost/flakiness) — real-model verification stays manual, recorded as a deliberate cut. |
 | T2 | Happy path covered end-to-end | DONE | `backend/tests/test_agent_loop_happy_path.py` |
 | T3 | 2–3 failure scenarios covered (MCP unreachable, tool error mid-task, model/API failure) | DONE | `backend/tests/test_agent_loop_failures.py` (all 3) |
 | T4 | 5–6 validation edge cases covered (empty results, zero-cert supplier, invalid enum, embedded-instruction content, allergen boundaries, expiry boundary) | TODO | `CLAUDE.md` §"Testing scenarios & required mock data" — these are MCP-server-level (`mcp-server/`) tests, not yet written as a formal suite (verified manually during Phase 1, `ai/DECISIONS.md` §24) |
@@ -65,17 +65,17 @@ Status legend: `TODO` / `DOING` / `DONE` / `CUT` (deliberately descoped — must
 
 | # | Requirement | Status | Evidence |
 |---|-------------|--------|----------|
-| D1 | Git repo with real history — commits that tell the story, not one final commit | TODO | Not yet git-initialised; will confirm with user before `git init` |
-| D2 | `ai/` directory with agent instruction files (CLAUDE.md etc.) | DOING | `CLAUDE.md` (root, referenced from `ai/`) |
-| D3 | `ai/` directory with significant prompts | DOING | `ai/prompts.md` |
+| D1 | Git repo with real history — commits that tell the story, not one final commit | DONE | GitHub public repo `foods-connected-compliance-assistant`, 8+ commits with descriptive multi-line messages, one per phase/milestone (Phases 0–2, closed-build-loop pass, checkpoints) |
+| D2 | `ai/` directory with agent instruction files (CLAUDE.md etc.) | DONE | `CLAUDE.md` (root, referenced from `ai/`), current through P31 |
+| D3 | `ai/` directory with significant prompts | DOING | `ai/prompts.md`, P1–P31 logged verbatim; append-only, kept current as the build continues |
 | D4 | `ai/` directory with transcripts or session summaries | DONE | `ai/prompts.md` (transcript — the brief says "transcripts *or* session summaries"; `ai/session-summary.md` is a bonus presentation-prep narrative, not needed for compliance) |
 | D5 | `ai/` directory with a note on which tools/models were used | DONE | `ai/tools-and-models.md` |
-| D6 | README: how to run, incl. env vars and mock-adapter toggle if any | TODO | |
+| D6 | README: how to run, incl. env vars and mock-adapter toggle if any | DONE | `README.md` §"How to run" (mcp-server + backend, `ANTHROPIC_API_KEY` env var); frontend row still `[TODO — Phase 3]` inside that same section, to be filled when Phase 3 lands |
 | D7 | README: chosen use case and MCP service | DONE | `README.md` §"Use case & MCP service"; full reasoning `ai/DECISIONS.md` §5/§8 |
-| D8 | README: key decisions | TODO | Content ready in `ai/DECISIONS.md`, needs summarising into README |
-| D9 | README: known limitations | TODO | |
-| D10 | README: what's next with more time | TODO | |
-| D11 | Time-boxed to ~4h; if scope is cut, record what and why | DOING | `ai/ROADMAP.md` frames the budget; gap log there will capture cuts |
+| D8 | README: key decisions | DONE | `README.md` §"Key decisions" (highlights + pointer to full `ai/DECISIONS.md` log) |
+| D9 | README: known limitations | DOING | `README.md` §"Known limitations" has the multi-turn-follow-up cut written up; placeholder line still needs real Phase 3–5 gaps folded in at Phase 6 wrap-up |
+| D10 | README: what's next with more time | DOING | `README.md` §"What's next, with more time" has item 1 written; placeholder for further items at Phase 6 wrap-up |
+| D11 | Time-boxed to ~4h; if scope is cut, record what and why | DOING | `ai/ROADMAP.md` frames the budget and now names one deliberate cut early (no automated real-API test, Phase 4); gap log finalised at Phase 6 |
 
 ## What gets assessed (qualitative — self-check before submitting)
 

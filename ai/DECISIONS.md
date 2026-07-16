@@ -13,12 +13,14 @@ Status tags: `LOCKED` (decided, don't revisit without new information), `OPEN` (
 
 ## RESUME POINT (updated at every meaningful step, per P17 — read this first)
 
-**Rewritten clean at P30** — this block had drifted stale (stacked "next" notes from several
-rounds back, contradicting itself). Superseded content below is gone, not archived — history for
-each of these is in its numbered §, not here.
+**Rewritten clean at P30, updated at P31** — this block had drifted stale (stacked "next" notes from
+several rounds back, contradicting itself). Superseded content below is gone, not archived —
+history for each of these is in its numbered §, not here.
 
 **Where we are:** Phases 0, 0.5, 1, and 2 are **DONE and verified**. Phase 3 (frontend) is next,
-not yet started. Prompt count: P1–P30 logged in `ai/prompts.md`.
+not yet started. `ai/ROADMAP.md` Phase 4 (Tests) now has three concrete named sub-items (§31):
+`mcp-server/tests/` for E1–E6, one true HTTP-level end-to-end test, and an explicit deliberate cut
+(no automated real-Anthropic-API test). Prompt count: P1–P31 logged in `ai/prompts.md`.
 
 **What exists and works, concretely:**
 - `CLAUDE.md` — full project spec, Tier-3 standard, includes the Backend API contract (§ added P29).
@@ -815,6 +817,37 @@ All spec files updated to match (`CLAUDE.md`, `specs/agent-spec.md` §9, `specs/
 §10), tests re-run and still 19/19 passing after the 2 code changes. `ai/ROADMAP.md` Phase 2 marked
 DONE; `ai/ASSESSMENT-CRITERIA.md` C1/C2, all of B1–B9, and most of the Testing section moved from
 TODO to DONE with real evidence, not just marked complete.
+
+## 31. P31 — testing scope clarified, roadmap tidied, stale deliverable statuses fixed — LOCKED
+
+User asked three things: (1) tidy `ai/ROADMAP.md` from Phase 4 onward; (2) should tests cover the
+agent/Python code too, not just the MCP server, and should they go true end-to-end from submission
+to result; (3) does `README.md` already explain what can be queried and what data is available.
+
+**Testing scope, locked:** not MCP-only. Three layers already exist and are correctly separated —
+agent-loop logic (fake model + fake MCP, 16 tests), real MCP wiring (fake model + the real MCP
+server over actual stdio, 3 tests), and HTTP contract (FastAPI `TestClient`, loop stubbed). The
+real gap, restated precisely: (a) `mcp-server/` has **zero** automated tests — E1–E6 were only ever
+manually verified in Phase 1; (b) no test currently exercises the *whole* stack — HTTP submission →
+real `run_task()` → poll to terminal state → assert the trace — because the existing API tests stub
+the loop and the existing loop tests never go through HTTP. Both added to `ai/ROADMAP.md` Phase 4 as
+concrete, named line items. **Deliberately not adding**: an automated test against the real
+Anthropic API — cost and flakiness on every run; real-model verification stays a manual, one-off
+check, explicitly recorded as a deliberate cut rather than left unstated.
+
+**README check:** already covers this, no gap. §"What you can ask — examples" (6 concrete example
+questions spanning single-lookup and multi-tool-chain queries) and §"Available data" (entity
+counts, categories/countries/statuses, what's deliberately fabricated) were both written during the
+P24 README expansion. Confirmed by re-reading the file, not assumed.
+
+**Stale statuses found and fixed while doing this** (`ai/ASSESSMENT-CRITERIA.md`): D1 (git repo)
+was still `TODO` despite 8+ pushed commits; D2/D3 said `DOING` for artefacts that are substantially
+current; D6/D8/D9/D10 (README sections) said `TODO` even though all of those sections were written
+during the P24 expansion. Corrected to accurate current status with real evidence pointers, not
+left as an unrelated drift for a later Integrity Check to catch.
+
+`ai/ROADMAP.md` Phase 4 row rewritten with the three concrete sub-items above (was a generic
+one-liner). Phase 6 row noted README is substantially done already, to revisit for accuracy only.
 
 ## 20. Open questions
 

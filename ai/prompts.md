@@ -215,3 +215,9 @@ then create a build loop gix log md file and reiterate to fix the gaps logged in
 ## P30
 
 save state
+
+## P31
+
+OK place tidy up the roadmap from now to end., Test should be about MCP only ior also the agent itself and any python code that has been built? Should they cover ened to end from submission to result to see if we get what we expect?
+
+Does the readme fikle clarify what is possible to query with this tool and what data can return?
