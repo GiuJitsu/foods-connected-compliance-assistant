@@ -13,46 +13,47 @@ Status tags: `LOCKED` (decided, don't revisit without new information), `OPEN` (
 
 ## RESUME POINT (updated at every meaningful step, per P17 — read this first)
 
-**Where we are:** Phase 0, 0.5, 1, **and 2** done and verified. Git repo initialised, GitHub remote
-created and pushed: https://github.com/GiuJitsu/foods-connected-compliance-assistant (public). `specs/agent-spec.md` is the **single, complete** product-agent spec (§26), now including a
-grounding/anti-hallucination rule (§15) and a literal draft system prompt (§16) — both added P24
-(§27). `README.md` substantially expanded with example questions, dataset summary, and MCP-server
-documentation. `CLAUDE.md` has a new "Files to keep in sync" checklist. `ai/ROADMAP.md` Phase 3 has
-a visual-quality sub-step. Next: commit + push this batch, then Phase 2 (backend agent loop) — the
-literal system prompt now lives at `prompts/system_prompt.txt`, ready to wire in directly. The real
-MCP stdio protocol is now genuinely verified end-to-end (§24 update, §28), not just the tool logic —
-a real client can connect to `mcp-server/server.py` and use it, confirmed, not assumed.
-`specs/agent-spec.md` §17 now has the full LLM-vs-Python responsibility map plus a designed (not
-yet built) grounding mechanical backstop — Phase 2 needs to implement it, not just the loop itself.
+**Rewritten clean at P30** — this block had drifted stale (stacked "next" notes from several
+rounds back, contradicting itself). Superseded content below is gone, not archived — history for
+each of these is in its numbered §, not here.
 
-**Phase 2 is now DONE** (§30) — built via a real closed-build-loop pass (fresh subagent, three-part
-build prompt, per user request P29), 19/19 tests independently re-verified, 5 real spec gaps found
-and fixed (`ai/build-loop-fix-log.md`). `backend/` is a working FastAPI app with the bounded agent
-loop, trace recording, the grounding backstop, and swappable fake/real model+MCP clients. Next:
-Phase 3 (frontend).
+**Where we are:** Phases 0, 0.5, 1, and 2 are **DONE and verified**. Phase 3 (frontend) is next,
+not yet started. Prompt count: P1–P30 logged in `ai/prompts.md`.
 
-**What exists:** `CLAUDE.md` (full spec), `specs/mcp-integration-spec.md`, `specs/agent-spec.md`,
-`README.md`, `design/ui-mockup/` (wireframe + notes), `ai/ROADMAP.md`, `ai/ASSESSMENT-CRITERIA.md`,
-`ai/tools-and-models.md`, `ai/session-summary.md`, `ai/prompts.md` (P1–P17), plus Phase 1's
-`mcp-server/` and `mockdata/` code.
+**What exists and works, concretely:**
+- `CLAUDE.md` — full project spec, Tier-3 standard, includes the Backend API contract (§ added P29).
+- `specs/agent-spec.md` — single, complete product-agent spec (identity → validation → assumptions,
+  §1–§17), including the grounding rule + mechanical backstop and the LLM-vs-Python responsibility map.
+- `specs/mcp-integration-spec.md` — full MCP tool contracts + trace schema (incl. `INTERNAL_ERROR`,
+  locked model id, `grounding_check`).
+- `prompts/system_prompt.txt` — the literal system prompt, loaded directly by `backend/`.
+- `mcp-server/` + `mockdata/` (Phase 1) — built and verified twice: tool logic directly, and the
+  real MCP stdio protocol end-to-end (real handshake/list_tools/call_tool).
+- `backend/` (Phase 2) — FastAPI app: bounded agent loop, trace recording, grounding backstop,
+  R2/R5 dedup safety net, swappable fake/real model+MCP clients. Built via an actual closed-build-loop
+  pass (fresh subagent, three-part build prompt) and independently re-verified: 19/19 tests pass,
+  including 3 real-MCP-protocol integration tests. 5 real spec gaps found and fixed — full log:
+  `ai/build-loop-fix-log.md`.
+- `design/ui-mockup/` — wireframe + functional notes, ready for Phase 3 to build against.
+- Git: local repo + GitHub remote, public, pushed through commit `187741a` (7 commits total).
+- `README.md`, `ai/ASSESSMENT-CRITERIA.md`, `ai/ROADMAP.md`, `ai/tools-and-models.md` all current
+  as of this checkpoint.
 
 **Standing rules currently active (all in `CLAUDE.md`, don't re-derive, just follow):** print
 roadmap status every step; confirm before creating new artefact/doc files (code files in Phases
-1–3 exempt, announce layout instead); log every prompt verbatim in `ai/prompts.md` without being
-asked; keep this Resume Point current without being asked; run an Integrity Check periodically
-(procedure defined in `CLAUDE.md`, one has run — see §21).
+1–3 exempt, announce layout instead); log every prompt verbatim without being asked; keep this
+Resume Point current without being asked; commit + push at every important step; run an Integrity
+Check periodically (one has run — §21).
 
-**Immediate next action:** waiting on user to run `gh auth login` and confirm, so the GitHub remote
-can be created and pushed (§25). After that: Phase 2 — backend agent loop (FastAPI + Anthropic API
-+ MCP client, bounded loop, trace recording).
+**Immediate next action:** Phase 3 — frontend (React + TypeScript + Vite), built against the
+acceptance criteria AC1–AC15 in `CLAUDE.md` and the API contract now locked there, using
+`design/ui-mockup/wireframe.svg` as the visual reference. Announce the file/module layout before
+scaffolding (per the code-files exemption, no per-file confirmation needed).
 
-**Git status:** local repo initialised, 2 commits made (`d234b33` spec/design, `9312db9` Phase 1
-implementation), no remote configured yet.
-
-**Known open items:** model tier (Haiku vs Sonnet) — provisional Haiku, confirm empirically in
-Phase 2/4; git-init timing — confirm with user first; MCP stdio transport still untested
-end-to-end (only direct function calls so far — real test is Phase 2 connecting to it); §20 for
-the full open-questions list.
+**Known open items (full list: §20):** model tier (Haiku vs Sonnet) — provisional Haiku
+(`claude-haiku-4-5-20251001`), confirm empirically once real API calls happen; MCP-server-level
+edge-case tests (E1–E6) not yet a formal automated suite (verified manually in Phase 1); visual
+polish for Phase 3, sequenced after functional ACs, first thing to cut if time is tight.
 
 ---
 
