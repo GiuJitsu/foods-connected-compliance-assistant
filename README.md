@@ -1,11 +1,12 @@
 # Foods Connected — Compliance Assistant
 
-> **Status: living document. Phase 0, 0.5, and 1 (spec, UI mockup, mock data + MCP server) are
-> complete and verified — the MCP server actually runs and every tool has been tested directly.
-> Phase 2 (backend agent loop) is next.** Sections below are written against the spec in
-> `CLAUDE.md` and `specs/agent-spec.md`, and will be completed/corrected as each build phase lands
-> — see `ai/ROADMAP.md` for the phase-by-phase plan and current position. Repo:
-> https://github.com/GiuJitsu/foods-connected-compliance-assistant
+> **Status: living document. Phase 0, 0.5, 1, and 2 (spec, UI mockup, MCP server, backend agent
+> loop) are complete and verified — a closed-build-loop pass (`ai/build-loop-fix-log.md`) tested
+> the spec against a fresh builder with no prior context, 19/19 backend tests pass including 3
+> real-MCP-protocol integration tests, and 5 real spec gaps found in that pass are fixed. Phase 3
+> (frontend) is next.** Sections below are written against `CLAUDE.md` and `specs/agent-spec.md`,
+> completed/corrected as each build phase lands — see `ai/ROADMAP.md` for the phase-by-phase plan.
+> Repo: https://github.com/GiuJitsu/foods-connected-compliance-assistant
 
 A take-home technical assessment (AI Engineering role, Foods Connected): a web app where a user
 submits a task in natural language, a Python backend runs a bounded AI agent loop over a
@@ -142,10 +143,21 @@ Runs over stdio — it's meant to be spawned by the backend (Phase 2), not talke
 terminal. To sanity-check it standalone, `python -c "import server; print(server.search_suppliers(reasoning='test', category='DAIRY'))"`
 from inside `mcp-server/` will run one tool call directly against the loaded mock data.
 
-**Backend + frontend:** `[TODO — filled in once Phase 2–3 are built.]` Will include: required
-environment variables (`ANTHROPIC_API_KEY` at minimum), startup commands for both, and — if a mock
-model adapter is ever added — how to toggle it. No mock adapter is currently planned; a real
-Anthropic API key is being used throughout (`ai/DECISIONS.md` §4).
+**Backend (Phase 2 — runnable today):**
+```
+cd backend
+pip install -r requirements.txt
+set ANTHROPIC_API_KEY=your-key-here   (PowerShell: $env:ANTHROPIC_API_KEY = "your-key-here")
+python -m uvicorn main:app --reload
+```
+Then `POST http://localhost:8000/api/tasks` with `{"task": "which dairy suppliers have an expired certification?"}`,
+poll `GET /api/tasks/{task_id}` for the result, or `GET /api/info` for the static info panel. Full
+contract: `CLAUDE.md` §"Backend API contract". No mock model adapter is planned; a real Anthropic
+key is used throughout (`ai/DECISIONS.md` §4) — without one set, task submission will fail with a
+`MODEL_API_FAILURE`/`INTERNAL_ERROR`, not a crash (the tests use `FakeModelClient` instead, no key
+needed: `cd backend && pip install -r requirements.txt && python -m pytest`).
+
+**Frontend:** `[TODO — Phase 3.]`
 
 ## Key decisions
 
@@ -183,7 +195,7 @@ Full reasoning and chronological log: `ai/DECISIONS.md`. Highlights:
 ## AI-assisted development
 
 This project was built with Claude Code (Sonnet 5) directing the build, using an Anthropic API key
-(starting with Claude Haiku, extended thinking enabled — see `CLAUDE.md` §"Tech stack" and
+(starting with Claude Haiku, `claude-haiku-4-5-20251001`, extended thinking enabled — see `CLAUDE.md` §"Tech stack" and
 `specs/agent-spec.md` §10 "On Chain-of-Thought"; may move to Sonnet if Phase 2 testing shows Haiku isn't strong/fast enough)
 for the product agent itself. Full session artefacts — CLAUDE.md, every significant prompt
 (numbered), the decision log, and a tools/models note — are in `ai/`, as required by the assessment

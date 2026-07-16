@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+anthropic
+mcp
+pydantic
+pytest
+pytest-asyncio
+httpx

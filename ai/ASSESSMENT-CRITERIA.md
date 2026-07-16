@@ -11,22 +11,22 @@ Status legend: `TODO` / `DOING` / `DONE` / `CUT` (deliberately descoped — must
 
 | # | Requirement | Status | Evidence |
 |---|-------------|--------|----------|
-| C1 | Tools consumed **over MCP** — no tool wired directly into the backend outside the protocol | DOING | `mcp-server/server.py` (FastMCP, stdio transport, 5 tools) — tool logic verified directly AND the real MCP stdio protocol verified separately (handshake, list_tools, call_tool over actual JSON-RPC), `ai/DECISIONS.md` §24/P25. Remaining: Phase 2's backend needs to be the one actually doing this connection in the real app, not a scratch script. |
-| C2 | Tool selection is the **model's decision** inside a bounded agent loop — no hardcoded call sequence | TODO | |
+| C1 | Tools consumed **over MCP** — no tool wired directly into the backend outside the protocol | DONE | `backend/mcp_client.py` (`StdioMCPClient`) connects to `mcp-server/server.py` only over the real MCP stdio protocol — no direct Python import of the server's tool functions anywhere in `backend/`. Verified: `backend/tests/test_real_mcp_integration.py` (3 tests, real subprocess + real protocol). |
+| C2 | Tool selection is the **model's decision** inside a bounded agent loop — no hardcoded call sequence | DONE | `backend/agent_loop.py` never chooses a tool — it only executes whatever `response.tool_uses` the model returned. Bounded by `ITERATION_CAP`/timeouts, not by a fixed call sequence. |
 
 ## Backend
 
 | # | Requirement | Status | Evidence |
 |---|-------------|--------|----------|
-| B1 | Python backend, exposes an API consumed by the frontend | TODO | |
-| B2 | Agent loop connects to the MCP server, presents tools to the model, executes model-chosen calls, feeds results back | TODO | |
-| B3 | Supports multiple tool calls per task | TODO | |
-| B4 | Loop is bounded: iteration cap | TODO | |
-| B5 | Loop is bounded: timeouts | TODO | |
-| B6 | Unreachable MCP server → meaningful state, not a hang/crash | TODO | |
-| B7 | Tool call errors mid-task → meaningful state, not a hang/crash | TODO | |
-| B8 | Model failure → meaningful state, not a hang/crash | TODO | |
-| B9 | Secrets taken from environment only; nothing sensitive committed | TODO | |
+| B1 | Python backend, exposes an API consumed by the frontend | DONE | `backend/main.py` (FastAPI) — `CLAUDE.md` §"Backend API contract" |
+| B2 | Agent loop connects to the MCP server, presents tools to the model, executes model-chosen calls, feeds results back | DONE | `backend/agent_loop.py` |
+| B3 | Supports multiple tool calls per task | DONE | `backend/tests/test_agent_loop_happy_path.py` (multi-target dairy suppliers scenario) |
+| B4 | Loop is bounded: iteration cap | DONE | `ITERATION_CAP = 8`, `backend/tests/test_loop_bounds.py` |
+| B5 | Loop is bounded: timeouts | DONE | 10s/call, 60s total, `backend/tests/test_loop_bounds.py` |
+| B6 | Unreachable MCP server → meaningful state, not a hang/crash | DONE | `backend/tests/test_agent_loop_failures.py::test_mcp_server_unreachable_at_task_start` |
+| B7 | Tool call errors mid-task → meaningful state, not a hang/crash | DONE | `backend/tests/test_agent_loop_failures.py::test_tool_call_error_mid_task_sets_completed_partial` |
+| B8 | Model failure → meaningful state, not a hang/crash | DONE | `backend/tests/test_agent_loop_failures.py::test_model_api_failure_mid_task`; unexpected internal faults get their own `INTERNAL_ERROR` bucket (`ai/build-loop-fix-log.md` gap #3) |
+| B9 | Secrets taken from environment only; nothing sensitive committed | DONE | `backend/config.py` reads `ANTHROPIC_API_KEY` at call time only, never stored/logged; `.gitignore` excludes `.env*` |
 
 ## Frontend
 
@@ -53,11 +53,13 @@ Status legend: `TODO` / `DOING` / `DONE` / `CUT` (deliberately descoped — must
 
 | # | Requirement | Status | Evidence |
 |---|-------------|--------|----------|
-| T1 | Automated tests "where they earn their place" | TODO | |
-| T2 | Happy path covered end-to-end | TODO | |
-| T3 | 2–3 failure scenarios covered (MCP unreachable, tool error mid-task, model/API failure) | TODO | |
-| T4 | 5–6 validation edge cases covered (empty results, zero-cert supplier, invalid enum, embedded-instruction content, allergen boundaries, expiry boundary) | TODO | `CLAUDE.md` §"Testing scenarios & required mock data" |
-| T5 | Loop-bound enforcement specifically tested (iteration cap, timeouts) | TODO | |
+| T1 | Automated tests "where they earn their place" | DOING | 19 backend tests (`backend/tests/`) against `FakeModelClient`/`FakeMCPClient`, no network/spend needed, plus 3 real-MCP-protocol integration tests. MCP-tool-level tests against `mockdata/` still to add. |
+| T2 | Happy path covered end-to-end | DONE | `backend/tests/test_agent_loop_happy_path.py` |
+| T3 | 2–3 failure scenarios covered (MCP unreachable, tool error mid-task, model/API failure) | DONE | `backend/tests/test_agent_loop_failures.py` (all 3) |
+| T4 | 5–6 validation edge cases covered (empty results, zero-cert supplier, invalid enum, embedded-instruction content, allergen boundaries, expiry boundary) | TODO | `CLAUDE.md` §"Testing scenarios & required mock data" — these are MCP-server-level (`mcp-server/`) tests, not yet written as a formal suite (verified manually during Phase 1, `ai/DECISIONS.md` §24) |
+| T5 | Loop-bound enforcement specifically tested (iteration cap, timeouts) | DONE | `backend/tests/test_loop_bounds.py` |
+| T6 | (Added P29) Grounding mechanical backstop tested | DONE | `backend/tests/test_grounding.py` (4 tests, incl. end-to-end "model invents an ID" case) |
+| T7 | (Added P29) Dedup safety net (R2/R5) tested | DONE | `backend/tests/test_dedup.py` |
 
 ## Deliverables
 

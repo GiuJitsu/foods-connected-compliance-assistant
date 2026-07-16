@@ -273,7 +273,7 @@ per-call entries, and one task-level summary.
   "tool_name": "string",
   "input": { "...": "as sent to the tool" },
   "reasoning": "string — the tool call's own required `reasoning` input parameter (§4), copied verbatim into the trace; not parsed from preceding assistant text and not fabricated after the fact",
-  "thinking": "string, nullable — raw extended-thinking content for this step, when the model produced one; shown in the UI collapsed by default with an explicit non-authoritative caption (specs/agent-spec.md §10 'On Chain-of-Thought')",
+  "thinking": "string, nullable — raw extended-thinking content for this step, when the model produced one; shown in the UI collapsed by default with an explicit non-authoritative caption (specs/agent-spec.md §10 'On Chain-of-Thought'). Locked (ai/build-loop-fix-log.md gap #5): when one model turn emits multiple tool calls sharing a single thinking block, that same text is copied into every resulting entry for that turn — not a per-call 1:1 mapping, since the model only thinks once per turn, not once per tool call within it.",
   "result_summary": "string — short human-readable summary, not the full raw payload",
   "success": "boolean",
   "error": {
@@ -299,8 +299,8 @@ with this field (`specs/agent-spec.md` §10 "On Chain-of-Thought").
   "limit_hit": "enum [NONE, ITERATION_CAP, TIMEOUT] — explicit, not inferred by the frontend",
   "tool_calls": "[ ...per-call entries, ordered ]",
   "final_answer": "string, present unless status == FAILED",
-  "failure_reason": "enum [MCP_UNREACHABLE, MODEL_API_FAILURE], present only if status == FAILED",
-  "model": "string — which model produced this answer, e.g. 'claude-haiku-4-5' (§'Tech stack' in CLAUDE.md for the actual model id in use)",
+  "failure_reason": "enum [MCP_UNREACHABLE, MODEL_API_FAILURE, INTERNAL_ERROR], present only if status == FAILED — INTERNAL_ERROR added ai/build-loop-fix-log.md gap #3: a genuine backend bug, distinct from a model/MCP fault, never folded into MODEL_API_FAILURE",
+  "model": "string — which model produced this answer. Locked (ai/build-loop-fix-log.md gap #2): 'claude-haiku-4-5-20251001' by default, env-overridable — no longer an illustrative example",
   "total_duration_ms": "integer — whole-task wall-clock time, for the final answer's basis line",
   "grounding_check": {
     "status": "enum [PASSED, FLAGGED]",

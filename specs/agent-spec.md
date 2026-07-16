@@ -220,8 +220,18 @@ Ranked by how often each should realistically trigger:
    **This sets `status = COMPLETED_PARTIAL` with `limit_hit = NONE`** — a real outcome distinct
    from hitting the iteration cap/timeout, and must be shown as `completed-partial` in the UI, not
    silently as a plain `completed` (Integrity Check #1, finding 8).
+   **Ambiguity closed (`ai/build-loop-fix-log.md` gap #4):** "otherwise" above could be read as
+   "only if no alternative path existed." **Locked interpretation: any tool call failure in a task
+   sets `COMPLETED_PARTIAL`, whether or not the model appeared to work around it.** Judging "did it
+   truly recover" is itself a semantic call the backend can't make reliably — erring toward
+   flagging for visibility over silently absorbing a hiccup is consistent with this project's
+   transparency stance throughout. The failed call is still visible in `tool_calls`, but the
+   overall status reflects that something didn't go cleanly.
 3. **Model/API failure** (e.g. Anthropic API error) → backend catches it, returns a clear error
    state to the frontend, loop terminates. Never surface a raw stack trace to the user.
+   **A genuinely unexpected internal exception (a backend bug, not a model/MCP fault) gets its own
+   `failure_reason = INTERNAL_ERROR`** (`ai/build-loop-fix-log.md` gap #3) — never folded into
+   `MODEL_API_FAILURE`, which would misattribute the fault.
 4. **Iteration cap or timeout reached without resolution** → best-effort partial answer + explicit
    "incomplete" flag, per §3.
 5. **Embedded-instruction / prompt-injection attempt via tool content** → agent must not comply;

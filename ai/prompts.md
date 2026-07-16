@@ -198,3 +198,16 @@ so sthe system prompt will instruct and direct the LLM part while the built pyth
 [Response to clarifying question "Add a Python-side mechanical check for grounding (comparing the final answer against trace contents), or leave it prompt-only for now and validate empirically in Phase 4?"]
 
 - "Add a Phase 2 mechanical backstop now"
+
+## P29
+
+we should go through this
+
+> *"Begin building the agent described in this document. First, tell me what you can build confidently without asking questions. Second, tell me what you need to clarify before building the rest. Third, build the parts you are confident about."*
+
+Then review three outputs from Claude Code:
+1. **What it built** — is it faithful to your Agent Purpose Document, or did it drift?
+2. **What questions it asked** — each question is a gap in your document
+3. **What it said it couldn't build** — each is a buildability gap, usually at a delegation boundary
+
+then create a build loop gix log md file and reiterate to fix the gaps logged in that file gap --> fix

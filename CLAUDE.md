@@ -119,7 +119,8 @@ shows the outcome and exactly what the agent did to get there. Full brief:
   its own top-level folder, separate from both the MCP server code and the backend. `[Phase 1]`
 - `mcp-server/` — the custom MCP server exposing the food-supply-chain tools, reads from
   `mockdata/`. `[Phase 1]`
-- `backend/` — Python backend: API, agent loop, MCP client wiring. `[Phase 2]`
+- `backend/` — Python backend: API, agent loop, MCP client wiring. `[Phase 2 — DONE, closed-build-loop
+  verified, ai/build-loop-fix-log.md]`
 - `frontend/` — React + TypeScript app. `[Phase 3]`
 
 ## Files to keep in sync (added P24, per "keep tracking and updating every single file")
@@ -346,6 +347,25 @@ Traced to `ai/ASSESSMENT-CRITERIA.md` rows F2–F7 and A4. This section is what 
 (`ai/ROADMAP.md`) builds against. Visual reference: `design/ui-mockup/wireframe.svg` and its
 companion `design/ui-mockup/NOTES.md` (functional summary).
 
+## Backend API contract (locked P29, ai/build-loop-fix-log.md gap #1)
+
+No source file specified this before Phase 2 was built — a real, since-fixed gap. Ratified from
+what Phase 2's closed-build-loop pass produced (`backend/main.py`), since it's a sensible,
+RESTful, well-justified choice, not something to redo differently for its own sake:
+
+- `POST /api/tasks` — body `{"task": "..."}`. Returns immediately: `{task_id, status: IN_PROGRESS}`.
+  The agent loop runs as a background task; the caller never blocks on tool calls (AC2).
+- `GET /api/tasks/{task_id}` — returns the current `TaskTrace` for that task (the exact schema in
+  `specs/mcp-integration-spec.md` §10). Poll this until `status` is `COMPLETED` /
+  `COMPLETED_PARTIAL` / `FAILED`. This response object **is** the "view raw trace JSON" affordance
+  (§"Frontend transparency requirements" #8) — no separate endpoint for it.
+- `GET /api/info` — the static "how this agent works" info panel data (AC12): model name, tool
+  catalog, loop limits. Fetched once at frontend load, not per-task.
+
+**Model id, locked:** `claude-haiku-4-5-20251001` (`ai/build-loop-fix-log.md` gap #2) — no longer
+an "e.g." anywhere in this project. Env-overridable via `ANTHROPIC_MODEL`, not hardcoded as
+unchangeable.
+
 ## UI interaction design & acceptance criteria
 
 Designed now, spec-first, before any frontend code exists — cheap to change on paper, expensive to
@@ -421,8 +441,9 @@ constraints — not itself mandated by the brief:
 - **Backend framework:** FastAPI — async support fits an agent loop well, minimal boilerplate for
   a small API surface.
 - **MCP server:** Python `mcp` SDK.
-- **Model:** Anthropic API (user-provided key). Starting with **Claude Haiku** for cost/speed, per
-  the brief's explicit welcome of small/inexpensive models; will move to Sonnet if Haiku's
+- **Model:** Anthropic API (user-provided key). Starting with **Claude Haiku
+  (`claude-haiku-4-5-20251001`, locked P29)** for cost/speed, per the brief's explicit welcome of
+  small/inexpensive models; will move to Sonnet if Haiku's
   tool-selection reasoning proves too weak during testing, or if extended thinking's added latency
   (`specs/agent-spec.md` §10) makes Haiku's responses uncomfortably slow — decision point recorded
   in `ai/DECISIONS.md` when resolved. **Extended thinking is enabled** on the model calls (agreed

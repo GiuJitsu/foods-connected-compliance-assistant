@@ -13,9 +13,8 @@ Status tags: `LOCKED` (decided, don't revisit without new information), `OPEN` (
 
 ## RESUME POINT (updated at every meaningful step, per P17 — read this first)
 
-**Where we are:** Phase 0, 0.5, 1 done and verified. Git repo initialised, GitHub remote created and
-pushed: https://github.com/GiuJitsu/foods-connected-compliance-assistant (public, 3 commits so
-far). `specs/agent-spec.md` is the **single, complete** product-agent spec (§26), now including a
+**Where we are:** Phase 0, 0.5, 1, **and 2** done and verified. Git repo initialised, GitHub remote
+created and pushed: https://github.com/GiuJitsu/foods-connected-compliance-assistant (public). `specs/agent-spec.md` is the **single, complete** product-agent spec (§26), now including a
 grounding/anti-hallucination rule (§15) and a literal draft system prompt (§16) — both added P24
 (§27). `README.md` substantially expanded with example questions, dataset summary, and MCP-server
 documentation. `CLAUDE.md` has a new "Files to keep in sync" checklist. `ai/ROADMAP.md` Phase 3 has
@@ -25,6 +24,12 @@ MCP stdio protocol is now genuinely verified end-to-end (§24 update, §28), not
 a real client can connect to `mcp-server/server.py` and use it, confirmed, not assumed.
 `specs/agent-spec.md` §17 now has the full LLM-vs-Python responsibility map plus a designed (not
 yet built) grounding mechanical backstop — Phase 2 needs to implement it, not just the loop itself.
+
+**Phase 2 is now DONE** (§30) — built via a real closed-build-loop pass (fresh subagent, three-part
+build prompt, per user request P29), 19/19 tests independently re-verified, 5 real spec gaps found
+and fixed (`ai/build-loop-fix-log.md`). `backend/` is a working FastAPI app with the bounded agent
+loop, trace recording, the grounding backstop, and swappable fake/real model+MCP clients. Next:
+Phase 3 (frontend).
 
 **What exists:** `CLAUDE.md` (full spec), `specs/mcp-integration-spec.md`, `specs/agent-spec.md`,
 `README.md`, `design/ui-mockup/` (wireframe + notes), `ai/ROADMAP.md`, `ai/ASSESSMENT-CRITERIA.md`,
@@ -763,6 +768,52 @@ mid-edit: a `replace_all` meant to update the live AC1–AC14→AC15 references 
 *historical* line in `ai/ROADMAP.md` (Phase 0.5's record, correctly AC14 at the time) — reverted
 that one specifically. Worth naming as a recurring risk: `replace_all` is convenient but blind to
 the historical-vs-live distinction this file's own discipline depends on.
+
+## 30. P29 — closed build loop run for real on Phase 2 — LOCKED
+
+User asked to run the training program's own closed-build-loop process (three-part build prompt,
+review the three outputs, log gaps, fix them) rather than have me build Phase 2 directly. Ran it
+properly: a fresh subagent with **no conversation history** — not me — was given only the 5
+build-facing spec files (`CLAUDE.md`, `specs/agent-spec.md`, `specs/mcp-integration-spec.md`,
+`prompts/system_prompt.txt`, the already-verified `mcp-server/`) and explicitly told not to read
+`ai/DECISIONS.md`/`ai/prompts.md`/`AI FDE Training/`, so any real gap would surface as a genuine
+question, not something found by reading our own history.
+
+**Operational note:** the first dispatch appeared interrupted by the user before starting, but had
+actually already begun running in the background and completed — `backend/` existed on disk before
+the second dispatch, which correctly reviewed/verified rather than blindly rewrote it. Everything
+below is independently re-verified by me (full test suite re-run myself, `agent_loop.py` /
+`grounding.py` / `main.py` / `schemas.py` / `config.py` read directly), not taken on the
+subagent's word — "trust but verify" applied literally here, not just claimed.
+
+**Result: 19/19 tests pass, including 3 real-MCP-stdio-protocol integration tests. Code faithfully
+matches the spec** (loop bounds, trace schema, dedup safety net, grounding backstop all correct) —
+no drift beyond the 5 gaps below. Nothing was genuinely blocked (the "what it could not build"
+output was empty, correctly — the Anthropic client is fully built, just not exercised against the
+live API per the environment constraint given).
+
+**Gap log — full detail in `ai/build-loop-fix-log.md`, summarised here:**
+1. API endpoint contract never specified anywhere (Design Gap) → ratified the builder's sensible
+   choice, locked into `CLAUDE.md` §"Backend API contract".
+2. Exact model id never locked, only given as an illustrative example (Spec Ambiguity) → **fixed
+   with real information the fresh builder had no way to know**: `claude-haiku-4-5-20251001` is
+   the actual current id. This is exactly what the closed-build-loop discipline is for — a fresh
+   builder correctly refuses to guess; the spec-writer (with more context) resolves it.
+3. `FailureReason` enum missing a bucket for a genuine internal bug, was being folded into
+   `MODEL_API_FAILURE` (Design Gap) → added `INTERNAL_ERROR`, updated `backend/schemas.py` and the
+   exception handler in `backend/agent_loop.py`.
+4. `COMPLETED_PARTIAL` semantics — "otherwise" in §9 #2 was genuinely ambiguous about whether
+   partial fires only on unrecovered failures (Spec Ambiguity) → locked the stricter reading (any
+   failure → partial, regardless of apparent recovery) as official, no code change — the backend
+   already implemented the safer interpretation.
+5. `thinking` attribution when one turn has multiple tool calls (Design Gap, borderline Acceptable
+   Variation) → ratified the builder's choice (shared thinking copied to every entry in that turn)
+   as correct, documented explicitly, no code change.
+
+All spec files updated to match (`CLAUDE.md`, `specs/agent-spec.md` §9, `specs/mcp-integration-spec.md`
+§10), tests re-run and still 19/19 passing after the 2 code changes. `ai/ROADMAP.md` Phase 2 marked
+DONE; `ai/ASSESSMENT-CRITERIA.md` C1/C2, all of B1–B9, and most of the Testing section moved from
+TODO to DONE with real evidence, not just marked complete.
 
 ## 20. Open questions
 
