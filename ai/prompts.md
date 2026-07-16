@@ -242,3 +242,7 @@ ok go ahead and run all tests, you should  also create a test log so we have the
 
 before we move on please update all relevant files. Decisions file etc
 Where are the results of the test being written?
+
+## P37
+
+ok so readme file explains clearly what testa are available and how to run them? so we have all cases happy fail and edge cases? we tested logic, validation and all other scenarios?

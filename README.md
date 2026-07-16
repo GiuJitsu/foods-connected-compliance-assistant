@@ -169,8 +169,27 @@ cd backend && pip install -r requirements.txt && python -m pytest
 Both run entirely against fake models/fake tool sets by default — no network calls, no spend. One
 file, `backend/tests/test_real_llm_integration.py`, is the exception: it calls the real Anthropic
 API and the real MCP server, and is automatically skipped unless `ANTHROPIC_API_KEY` is set (so a
-routine run never spends money by surprise). Full results from the last complete run (33/33
-passing, including that real-API run): `ai/test-log.md`.
+routine run never spends money by surprise).
+
+**What's tested — 33/33 passing, matching the brief's coverage target (1 happy path + 2–3 failure
+scenarios + 5–6 validation edge cases, `CLAUDE.md` §"Testing requirements") plus additional coverage
+beyond that minimum:**
+
+| Category | Where | Count |
+|---|---|---|
+| Happy path | `test_agent_loop_happy_path.py` | 1 |
+| Failure scenarios — MCP unreachable / tool error mid-task / model-API failure | `test_agent_loop_failures.py` | 3 |
+| Validation edge cases E1–E6 (empty result, zero-cert supplier, invalid enum, embedded-instruction text, allergen boundaries, expiry boundary) + NOT_FOUND contracts | `mcp-server/tests/test_edge_cases.py` | 10 |
+| Loop-bound enforcement (iteration cap, total timeout) | `test_loop_bounds.py` | 2 |
+| Duplicate-call safety net | `test_dedup.py` | 1 |
+| Anti-hallucination grounding backstop | `test_grounding.py` | 4 |
+| HTTP API contract | `test_api.py` | 5 |
+| Real MCP protocol (fake model + the real server, real stdio) | `test_real_mcp_integration.py` | 3 |
+| True end-to-end (real HTTP → real agent loop → real MCP server, polled to completion) | `test_end_to_end_http.py` | 1 |
+| Real Anthropic API + real MCP server, both genuinely live | `test_real_llm_integration.py` | 3 |
+
+All `backend/tests/` paths above are relative to `backend/tests/`. Per-test rationale and the full
+run transcript: `ai/test-log.md`.
 
 ## Key decisions
 
