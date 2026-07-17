@@ -207,6 +207,15 @@ beyond that minimum:**
 All `backend/tests/` paths above are relative to `backend/tests/`. Per-test rationale and the full
 run transcript: `ai/test-log.md`.
 
+**Frontend (Playwright, dev-only — not part of the product agent's own tool catalog):** 13 tests
+in `frontend/tests/`, all passing — 4 against the real backend + real MCP server + real Anthropic
+API (`e2e.spec.ts`: info panel, client-side validation, a full real task, dark mode), and 9 against
+a schema-accurate mocked backend for states a real run can't reliably force on demand (`e2e-mocked-
+states.spec.ts`: all 3 `FAILED` sub-reasons, both `limit_hit` types, grounding-`FLAGGED`, all 4
+tool-error categories together, the auto-clearing question field). One real bug was found and fixed
+this way — a React `StrictMode` polling issue invisible to every other test in this project, since
+none of them involve a browser at all. Full account: `ai/DECISIONS.md` §34.
+
 ## Key decisions
 
 Full reasoning and chronological log: `ai/DECISIONS.md`. Highlights:
@@ -219,16 +228,37 @@ Full reasoning and chronological log: `ai/DECISIONS.md`. Highlights:
 - Explicit grounding/anti-hallucination rule: every claim in the final answer must trace to an
   actual tool result; an empty search result or a `NOT_FOUND` must be reported honestly, never
   papered over with an invented answer (`specs/agent-spec.md` §15).
-- Playwright MCP used only as a developer testing tool, never part of the product agent's own tool
-  catalog, and not used to script the interview demo.
+- Playwright used only as a developer testing tool, never part of the product agent's own tool
+  catalog, and not used to script the interview demo. Originally planned to run as an MCP server
+  (per the brief's own tool-shape); when no Playwright MCP server turned out to be connected in this
+  build session, installed the `@playwright/test` **package** directly instead — same verification
+  value (a real Chromium browser), no MCP wrapper needed. Full account: `ai/DECISIONS.md` §34.
 
 ## Known limitations
 
 - **No multi-turn conversation.** Every task is independent; there's no way to ask a follow-up
   question about a previous result without it being treated as an unrelated new task. Considered
   and deliberately deferred — see "What's next" below and `ai/DECISIONS.md` §16.
-- `[This list will grow as we hit real gaps during the build — tracked live in ai/ROADMAP.md's gap
-  log, summarised here at the end per the brief's "record what you cut, and why" instruction.]`
+- **In-memory task store.** `backend/main.py` keeps tasks in a plain Python dict — fine for a local
+  single-process demo (no persistence requirement anywhere in the brief), but restarting the backend
+  loses all task history, and it wouldn't survive multiple backend instances.
+- **Grounding backstop catches ID-shaped hallucination only.** `backend/grounding.py` regex-matches
+  `SUP-`/`CERT-`/`SPEC-`/`INC-` prefixed tokens against tool results — it cannot catch a fabricated
+  *fact* about a real entity (e.g. inventing a certification date for a real supplier) or a
+  name-only hallucination with no ID attached. Explicitly scoped this way from the start, not
+  discovered late — full rationale `specs/agent-spec.md` §17.
+- **Some frontend states verified via a mocked backend, not a forced real failure.** The 3 `FAILED`
+  sub-reasons, the limit-hit path, and grounding-`FLAGGED` are proven to render correctly given a
+  schema-accurate payload (`frontend/tests/e2e-mocked-states.spec.ts`) — that the *backend* actually
+  produces each of those states is proven separately, but not together in one single real run (doing
+  so on demand — e.g. forcing a real model API failure — isn't reliably reproducible). Recorded
+  honestly in `ai/ASSESSMENT-CRITERIA.md` rather than overclaimed.
+- **No CI pipeline.** All 46 automated tests (33 backend/mcp-server + 13 frontend) are run manually
+  from the command line, not on every push. Fine for a single-developer 4-hour assessment; a real
+  gap for anything longer-lived.
+- **Single browser, no accessibility audit.** Playwright testing used Chromium only; no cross-browser
+  pass and no screen-reader testing, beyond the basic choices already in place (focus-visible states,
+  a considered color palette, semantic HTML).
 
 ## What's next, with more time
 
@@ -238,7 +268,15 @@ Full reasoning and chronological log: `ai/DECISIONS.md`. Highlights:
    into a follow-up call, a frontend redesign from "one task card" to a conversation thread, and
    new tests for context-carrying correctness — estimated at another 45–90 minutes on top of an
    already ~4h-boxed build. Full analysis: `ai/DECISIONS.md` §16.
-2. `[Further items added during Phase 6 wrap-up, once real build gaps are known.]`
+2. **CI pipeline.** A GitHub Actions workflow running `mcp-server/`, `backend/`, and `frontend/`
+   tests on every push — the tests already exist and pass locally, this is purely wiring.
+3. **Fact-level grounding, not just ID-level.** A second, cheap model call that checks the final
+   answer's factual claims against the tool results actually gathered, catching hallucinations the
+   regex-based backstop structurally can't (see "Known limitations" above).
+4. **Persist task history** to a real datastore so the trace survives a backend restart, and so a
+   user could browse past tasks, not just the one currently on screen.
+5. **Cross-browser and accessibility pass** — Firefox/Safari via Playwright's other browser projects,
+   and a real screen-reader pass, not just the structural accessibility choices already made.
 
 ## AI-assisted development
 

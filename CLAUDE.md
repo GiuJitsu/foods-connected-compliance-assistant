@@ -139,8 +139,9 @@ Checklist of what needs touching as work proceeds, and when — so nothing gets 
 | `specs/agent-spec.md` | Any agent-behaviour change — before the system prompt is updated, not after |
 | `prompts/system_prompt.txt` | Whenever agent behaviour changes require a prompt update — keep in lockstep with `specs/agent-spec.md`, don't let them drift into two different sources of truth |
 | `README.md` | Any user-facing fact changes: what's runnable, example questions, dataset shape, known limitations |
-| `ai/tools-and-models.md` | Model tier changes (e.g. Haiku → Sonnet) |
-| `ai/session-summary.md` | End of each phase, narrative update |
+| `ai/tools-and-models.md` | Model tier changes (e.g. Haiku → Sonnet); any new tool/skill that entered the build (e.g. Playwright, a Claude Code skill) |
+| `ai/session-summary.md` | End of each phase, narrative update — no exceptions; a phase isn't done until this file says what happened in it |
+| `ai/test-log.md` | Any full test-suite re-run |
 | `git` | A commit at every important step, pushed (§"Working agreements") |
 
 **Templates referenced throughout this project** (all in `AI FDE Training/Reference/`, read-only):

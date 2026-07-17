@@ -73,9 +73,9 @@ Status legend: `TODO` / `DOING` / `DONE` / `CUT` (deliberately descoped — must
 | D6 | README: how to run, incl. env vars and mock-adapter toggle if any | DONE | `README.md` §"How to run" — mcp-server, backend (`ANTHROPIC_API_KEY`), frontend (`npm run dev`, `VITE_API_BASE_URL`), and the Playwright test suite, all with real runnable commands |
 | D7 | README: chosen use case and MCP service | DONE | `README.md` §"Use case & MCP service"; full reasoning `ai/DECISIONS.md` §5/§8 |
 | D8 | README: key decisions | DONE | `README.md` §"Key decisions" (highlights + pointer to full `ai/DECISIONS.md` log) |
-| D9 | README: known limitations | DOING | `README.md` §"Known limitations" has the multi-turn-follow-up cut written up; placeholder line still needs real Phase 3–5 gaps folded in at Phase 6 wrap-up |
-| D10 | README: what's next with more time | DOING | `README.md` §"What's next, with more time" has item 1 written; placeholder for further items at Phase 6 wrap-up |
-| D11 | Time-boxed to ~4h; if scope is cut, record what and why | DOING | `ai/ROADMAP.md` frames the budget and now names one deliberate cut early (no automated real-API test, Phase 4); gap log finalised at Phase 6 |
+| D9 | README: known limitations | DONE | `README.md` §"Known limitations" — 6 items, each real and specific (multi-turn, in-memory store, grounding's ID-only scope, mocked-vs-forced frontend states, no CI, single-browser testing) |
+| D10 | README: what's next with more time | DONE | `README.md` §"What's next, with more time" — 5 items, each scoped (multi-turn, CI, fact-level grounding, persistence, cross-browser/accessibility) |
+| D11 | Time-boxed to ~4h; if scope is cut, record what and why | DONE | `ai/ROADMAP.md` frames the budget; every deliberate cut recorded where it happened (no automated real-API test reversed at Phase 4, multi-turn deferred at §16) — this project ran well past a literal 4h under explicit user direction to go deep, recorded honestly rather than hidden |
 
 ## What gets assessed (qualitative — self-check before submitting)
 

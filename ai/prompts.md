@@ -13,6 +13,106 @@ Rules for this file:
 
 ---
 
+## Narrative — how this log reads as a story (added P42)
+
+The raw log below is complete but flat — 41 prompts in strict order, no arc visible. This section
+sits on top of it, not in place of it: an index into the story the numbers tell, so a reader (or the
+presentation) can follow the shape of the build without reading all 41 in sequence. Every claim below
+is traceable to a specific `P#` in the log — nothing here is asserted without a number attached.
+
+**Arc 1 — scoping the exercise before writing anything (P1–P4).** P1 set every standing rule this
+project still follows: read the brief, read a separate training program's methodology folder, start
+`CLAUDE.md`/`ai/DECISIONS.md`/`ai/prompts.md` immediately, never assume, work step by step, never
+touch the training folder. P2–P4 chose the use case — offered a straight trade-off between GitHub's
+public MCP server and a custom-built one, explicitly asked to help decide (P2), locked to custom
+(P3), then paused a first draft of the dataset/tools/stack to adjust before any code existed (P4).
+
+**Arc 2 — grounding the spec in something real (P5–P9).** P5 rejected an arbitrary tech stack and
+mock dataset in favor of the brief's actual wording and real research into what Foods Connected's
+product does — this is where "Specification" (not "Product") and real certification-scheme names
+(BRCGS, ISO 22000, SALSA) entered the domain model, and where the ATX training methodology got
+re-evaluated for what actually transfers to a 4-hour build versus a 4-day capstone. P6 settled
+Playwright's role (dev-tool only, decided *before* any UI existed). P7 locked concrete loop bounds
+(8 calls / 10s / 60s), the happy-path/failure/edge-case testing shape, and asked for a plain-language
+clarification of defaults that had been set under implied latitude — a recurring pattern: default
+first under stated latitude, then explain and let the user veto. P8–P9 pushed hard on transparency:
+is this really one-shot, does the UI show every required signal, and an explicit request to see the
+assessment criteria mapped against real progress rather than taking "we're covering it" on faith.
+
+**Arc 3 — the transparency spec hardens (P10–P18).** P10–P11 expanded what "transparency" concretely
+means (tool calls, data retrieved, reasoning, chain-of-thought) and reversed an earlier, over-cautious
+call to hide extended thinking — it's shown now, collapsed by default, captioned as non-authoritative.
+P12–P13 caught an overclaim (treating `session-summary.md` as a required deliverable when the brief
+says transcripts *or* summaries and `prompts.md` already satisfies that) and fixed the framing rather
+than defending it. P14 introduced the Integrity Check procedure itself — a standing, periodic audit
+across every artefact for exactly the kind of drift a fast-moving build accumulates. P16–P18 locked
+the tool-selection decision rules (R1–R6), moved schema-writing before data-writing, and got Python
+installed (first of several environment gaps this session — see Arc 8).
+
+**Arc 4 — infrastructure and consolidation (P19–P23).** P19 asked for a real git repo with real
+commit history, and pushed on where the agent's tool-selection *logic* actually lives (it should be
+one systematic place, not scattered). P20–P21 resolved repo scope and git identity. P22–P23
+consolidated a spec split between `CLAUDE.md` and `specs/agent-spec.md` that had stopped being
+readable as two files — reversed into one, after direct feedback that the split was making things
+*harder* to follow, not easier (worth remembering: not every split that helps one document helps
+another — the MCP-contracts split still works, the agent-behavior split didn't).
+
+**Arc 5 — anti-hallucination and the system prompt (P24–P28).** P24 asked the load-bearing question
+of the whole safety design: how does the agent avoid inventing an answer when data isn't there? That
+single question produced the grounding rule, the system prompt's own file (`prompts/system_prompt.txt`,
+separated from the spec that describes *why* it says what it says), and a big README expansion (real
+example questions, real dataset stats). P25 caught a real overstatement — claiming the MCP server was
+"already running" when only direct Python calls had been verified, not the actual protocol — owned
+directly and then closed for real with a genuine MCP client test, not just re-flagged. P28 added the
+Python-side mechanical grounding backstop on top of the prompt-only instruction, once the two-layer
+LLM/deterministic-code split was made explicit.
+
+**Arc 6 — proving it, not just describing it (P29).** Rather than have the build agent write Phase 2
+directly, P29 asked for the training methodology's own closed-build-loop process to be run for real: a
+fresh subagent, no memory of this conversation, the literal three-part prompt, then a review of what
+it built / what it asked / what it couldn't build, each gap logged and fixed. Five real gaps surfaced
+this way (`ai/build-loop-fix-log.md`) — this is the single clearest evidence in the whole project that
+the spec was tested against something other than its own author's memory of what he meant.
+
+**Arc 7 — testing, for real (P31–P37).** P31 asked whether testing should cover more than the MCP
+server and whether it should go genuinely end-to-end — the honest answer at the time was "not yet,"
+and that gap got named explicitly rather than left implicit. P32 reversed an earlier deliberate cut
+(no automated real-API test, too costly/flaky) and asked to run against the real Anthropic API right
+now instead. P33–P34 handled the API key as a security question, not a config detail — refused to
+have it pasted into the chat at all, since this repo is public. P35 was the actual run: 33/33 tests,
+including the first real-model, real-MCP-server combination in the whole project, which resolved the
+standing Haiku-vs-Sonnet question empirically. P36 asked for every file to be brought current after
+that — surfaced that `ai/session-summary.md` had gone stale since Phase 0.5, a genuine process gap,
+not just a documentation nicety. P37 double-checked the README actually *showed* test coverage rather
+than just linking to it — a real gap, closed with an inline table.
+
+**Arc 8 — design before code, then code, then prove it (P38–P41).** P38 was a real pivot, not a
+tweak: the first UI design pass was too restrained, and the direction moved to a bigger banner, a
+sidebar, and a genuinely food-specific palette and type system. P39 approved it — the *design* was
+signed off before a single React component existed, deliberately, because iterating on a static HTML
+page is cheap and iterating on real components isn't. P40 asked to install Playwright once it turned
+out no MCP server for it was actually connected in this session — installed as a package instead, and
+the first real run it did caught a genuine bug (§34 in `ai/DECISIONS.md`) that no other test in the
+project could have found. P41 asked for Phase 5 explicitly, plus a small real UX fix (auto-clear the
+question field) — Phase 5 itself closed the honest gaps left open after Phase 3 rather than declaring
+victory on the first green test run.
+
+**Arc 9 — wrap-up (P42, this prompt).** Asked for Phase 6, a final integrity pass across every
+artefact, and — specifically — for this file, `ai/DECISIONS.md`, `ai/tools-and-models.md`, and
+`ai/session-summary.md` to each carry a narrative on top of their raw logs, so the project can be
+understood as a story, not just audited as a checklist.
+
+**A thread worth naming on its own: self-correction.** At least five times in this log the build
+agent caught and fixed its own mistake without being told to — P25's overstated MCP readiness, a
+prompt-log ordering slip caught by grepping the actual sequence rather than trusting memory (visible
+in `ai/DECISIONS.md`'s Resume Point history), 4 ambiguous Playwright test locators in Phase 5, and
+the README/CLAUDE.md staleness caught in this very wrap-up pass. None of these were forced by a user
+catching them first — that's the pattern worth pointing to for "what did the AI get wrong and how was
+it caught" (assessment brief presentation point P4), alongside the one a *real browser* had to catch:
+the React `StrictMode` polling bug in Phase 3.
+
+---
+
 ## P1
 
 so I a @2026 AI Engineering Assessment.pdf file which contains an exercise to perform. Let's review and pick a specific idea and what are the fundamental requirements to keep in mind. Besides I have added a @AI FDE Training/ folder that contains a series of folders with weekly work with claude.md files, specification files and other files that I used to work on the projects. Importantly, they refer to a methodology called ATX that is in all the files in the @AI FDE Training/Reference/ folder. Please read all the files in that folder and let's understand what, in this methodology will be useful for us and to perform this exercise. Also we need to start to create a claude.md file. This file will contain the main rules to proceed. You can look at the template inside the @AI FDE Training/Reference/ folder. Please don't assume anything. Ask for clarification,when needed, at every step. Also, we need to create a file to record all the important desicions we are making, scope, design, constraint, rules, goal, intended result. Separate from the file I just mention, there must be another file that will contain all the prompt I am using, one by one, just as they are prompted to you, included the present prompt. They can be numbered progressively and we can later elaborate on them for the sake of the presentation. Also, do things step by step, always tell me what file you have created or edited, what changes you made and wait for me before proceeding. The project folder for this project is Food Connected Demo. Don't write inside @AI FDE Training/ folder. Le't start
@@ -262,3 +362,9 @@ install playwright
 ## P41
 
 let's do phase 5 before wrapping up. One thing that I'd like it so clear the qiestion field automatically without me having to clear it to ask the next question. Does it make sense?
+
+## P42
+
+yes le't sdo that. ALso make sure all files are up to date. A final consistency and integrity check. Also I want to take the prompts file we have and add on top of it a coherent narrative of all the prompt used to give an overview of how we have done the work. I want to do something similar in the decisions file so we have a clear prospect of what decisions we have made. Tools and models file needs to reflect all the tools we used. MCS, playwright, the skills we have used and explained them clearly, what they do, why we used them.
+session summary will be for the actual presentation prep if I am correct? Let's refine it with a narrative on top of the file as well that I can use as script for the presentation. The presentation nees to cover all the aspect, the logic, the constraint, the decisions, the backstop, the validation, the mechanism, Logic beyond the minimum — loop-bound enforcement, dedup safety net, grounding/anti-hallucination backstop,
+explain those, where the code is, how the code is, or if it's a prompt, where is the prompt and what it says. explain the mechanism and the purpose
